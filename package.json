@@ -1,0 +1,31 @@
+{
+  "name": "medicapp-crm",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "gulp",
+    "dev": "gulp dev"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^7.2.0",
+    "bootstrap": "^5.3.8",
+    "datatables.net": "^2.3.7",
+    "datatables.net-bs5": "^2.3.7",
+    "jquery": "^4.0.0"
+  },
+  "devDependencies": {
+    "browser-sync": "^3.0.4",
+    "gulp": "^5.0.1",
+    "gulp-clean-css": "^4.3.0",
+    "gulp-concat": "^2.6.1",
+    "gulp-sass": "^6.0.1",
+    "gulp-uglify": "^3.0.2",
+    "sass": "^1.98.0"
+  }
+}

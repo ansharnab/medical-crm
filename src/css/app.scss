@@ -1,0 +1,25 @@
+$primary: #0062cc;
+$success: #198754;
+$info: #0dcaf0;
+
+body {
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+[data-theme="dark"] {
+  background-color: #121212;
+  color: #eee;
+}
+
+#sidebar {
+  min-height: 100vh;
+}
+
+.card {
+  border-radius: 0.65rem;
+  box-shadow: 0 0.45rem 1.1rem rgba(0, 0, 0, 0.05);
+}
+
+.table thead {
+  background: #f7f7fb;
+}

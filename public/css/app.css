@@ -1,0 +1,13 @@
+html, body {height:100%; overflow:hidden; margin:0;}
+body {font-family:"Segoe UI",Roboto,Arial,sans-serif;}
+[data-theme=dark]{background-color:#121212;color:#eee}
+#app {height:100%; display:flex; overflow:hidden;}
+#sidebar {min-height:100vh;}
+main {flex:1; overflow-y:auto;}
+#pageContent {min-height: calc(100vh - 120px);}
+.card{border-radius:.65rem;box-shadow:0 .45rem 1.1rem rgba(0,0,0,.05); overflow:hidden;}
+.card.chart-card {min-height:360px;}
+.card canvas {max-height:260px !important; width:100% !important; height:260px !important;}
+.card .chart-wrapper{max-height:260px; overflow:hidden;}
+
+.table thead{background:#f7f7fb}
