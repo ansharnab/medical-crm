@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MaatriDev MedicCare CRM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar" id="sidebar">
+        <div class="brand">
+          <div class="brand__logo">MD</div>
+          <div>
+            <h1>MaatriDev MedicCare</h1>
+            <p>Clinic & Hospital CRM</p>
+          </div>
+        </div>
+        <nav class="menu" id="menu"></nav>
+      </aside>
+
+      <main class="content">
+        <header class="topbar">
+          <div class="topbar__left">
+            <button class="btn btn--ghost mobile-only" id="menu-toggle-btn">Menu</button>
+            <div>
+              <h2 id="view-title">Dashboard</h2>
+              <p id="view-description">Hospital operations overview</p>
+            </div>
+          </div>
+          <div class="topbar__actions">
+            <input id="global-search" type="search" placeholder="Search patients, doctors, invoices..." />
+            <select id="role-select" aria-label="Select role">
+              <option value="admin">Admin</option>
+              <option value="doctor">Doctor</option>
+              <option value="receptionist">Receptionist</option>
+            </select>
+            <button class="btn" id="secondary-action-btn">Export</button>
+            <button class="btn btn--primary" id="quick-add-btn">+ New Appointment</button>
+          </div>
+        </header>
+
+        <section class="kpi-grid" id="kpi-grid"></section>
+        <section class="workspace" id="workspace"></section>
+      </main>
+    </div>
+
+    <dialog id="quick-add-dialog">
+      <form method="dialog" id="appointment-form">
+        <h3>Quick Appointment</h3>
+        <label>Patient Name <input required name="patient" /></label>
+        <label>Doctor <input required name="doctor" /></label>
+        <label>Date & Time <input required name="slot" type="datetime-local" /></label>
+        <div class="dialog-actions">
+          <button value="cancel" class="btn" formnovalidate>Cancel</button>
+          <button value="default" class="btn btn--primary">Create</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="patient-dialog">
+      <form method="dialog" id="patient-form">
+        <h3 id="patient-form-title">Add Patient</h3>
+        <input type="hidden" name="patientIndex" />
+        <label>Patient Name <input required name="name" /></label>
+        <label>Age <input required name="age" type="number" min="0" max="120" /></label>
+        <label>Condition <input required name="condition" /></label>
+        <label>City <input required name="city" /></label>
+        <label>Assigned Doctor <input required name="doctor" /></label>
+        <label>
+          Risk
+          <select name="risk">
+            <option value="ok">Stable</option>
+            <option value="warn">Monitor</option>
+            <option value="danger">High Risk</option>
+          </select>
+        </label>
+        <div class="dialog-actions">
+          <button value="cancel" class="btn" formnovalidate>Cancel</button>
+          <button value="default" class="btn btn--primary">Save Patient</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="doctor-dialog">
+      <form method="dialog" id="doctor-form">
+        <h3>Add Doctor</h3>
+        <label>Doctor Name <input required name="name" /></label>
+        <label>Department <input required name="dept" /></label>
+        <label>Current Patients <input required name="patients" type="number" min="0" /></label>
+        <label>Utilization <input required name="utilization" placeholder="e.g. 65%" /></label>
+        <div class="dialog-actions">
+          <button value="cancel" class="btn" formnovalidate>Cancel</button>
+          <button value="default" class="btn btn--primary">Add Doctor</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="staff-dialog">
+      <form method="dialog" id="staff-form">
+        <h3>Add Staff</h3>
+        <label>Staff Name <input required name="name" /></label>
+        <label>Role <input required name="role" /></label>
+        <label>Shift <input required name="shift" /></label>
+        <div class="dialog-actions">
+          <button value="cancel" class="btn" formnovalidate>Cancel</button>
+          <button value="default" class="btn btn--primary">Add Staff</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="invoice-dialog">
+      <form method="dialog" id="invoice-form">
+        <h3>Add Invoice</h3>
+        <label>Patient Name <input required name="patient" /></label>
+        <label>Amount (INR) <input required name="amount" type="number" min="0" /></label>
+        <label>
+          Status
+          <select name="status">
+            <option value="Due">Due</option>
+            <option value="Insurance Review">Insurance Review</option>
+            <option value="Paid">Paid</option>
+          </select>
+        </label>
+        <div class="dialog-actions">
+          <button value="cancel" class="btn" formnovalidate>Cancel</button>
+          <button value="default" class="btn btn--primary">Add Invoice</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="inventory-dialog">
+      <form method="dialog" id="inventory-form">
+        <h3>Add Inventory Item</h3>
+        <label>Item Name <input required name="item" /></label>
+        <label>Unit <input required name="unit" /></label>
+        <label>On Hand <input required name="onHand" type="number" min="0" /></label>
+        <label>
+          Alert
+          <select name="alert">
+            <option value="Good">Good</option>
+            <option value="Low">Low</option>
+            <option value="Critical">Critical</option>
+          </select>
+        </label>
+        <div class="dialog-actions">
+          <button value="cancel" class="btn" formnovalidate>Cancel</button>
+          <button value="default" class="btn btn--primary">Add Item</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="kit-dialog">
+      <form method="dialog" id="kit-form">
+        <h3>Add Kit Request</h3>
+        <label>Department <input required name="department" /></label>
+        <label>Requested Items <input required name="requested" /></label>
+        <label>ETA <input required name="eta" placeholder="e.g. Today 18:00" /></label>
+        <div class="dialog-actions">
+          <button value="cancel" class="btn" formnovalidate>Cancel</button>
+          <button value="default" class="btn btn--primary">Add Request</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div class="toast" id="toast">
+      <span id="toast-message"></span>
+      <button id="toast-undo-btn" class="btn mini-btn">Undo</button>
+    </div>
+    <div class="chart-tooltip" id="chart-tooltip"></div>
+    <script src="./app.js"></script>
+  </body>
+</html>
