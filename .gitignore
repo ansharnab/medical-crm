@@ -2,4 +2,8 @@
 mcps/
 terminals/
 agent-transcripts/
+canvases/
+website/
+node_modules/
+server/*.db
 *.log

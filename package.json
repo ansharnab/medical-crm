@@ -1,0 +1,19 @@
+{
+  "name": "maatridev-mediccare-crm",
+  "version": "2.0.0",
+  "description": "Full-stack medical CRM with dashboard, auth, and SQLite backend",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "sqlite3": "^6.0.1",
+    "uuid": "^13.0.0"
+  }
+}

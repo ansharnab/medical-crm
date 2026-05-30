@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <div class="app">
+    <div class="app hidden">
       <aside class="sidebar" id="sidebar">
         <div class="brand">
           <div class="brand__logo">MD</div>
@@ -35,6 +35,7 @@
             </div>
           </div>
           <div class="topbar__actions">
+            <span class="user-label" id="user-label"></span>
             <input id="global-search" type="search" placeholder="Search patients, doctors, invoices..." />
             <select id="role-select" aria-label="Select role">
               <option value="admin">Admin</option>
@@ -43,6 +44,7 @@
             </select>
             <button class="btn" id="secondary-action-btn">Export</button>
             <button class="btn btn--primary" id="quick-add-btn">+ New Appointment</button>
+            <button class="btn btn--danger" id="logout-btn">Logout</button>
           </div>
         </header>
 
@@ -67,7 +69,7 @@
     <dialog id="patient-dialog">
       <form method="dialog" id="patient-form">
         <h3 id="patient-form-title">Add Patient</h3>
-        <input type="hidden" name="patientIndex" />
+        <input type="hidden" name="patientId" />
         <label>Patient Name <input required name="name" /></label>
         <label>Age <input required name="age" type="number" min="0" max="120" /></label>
         <label>Condition <input required name="condition" /></label>
@@ -169,11 +171,24 @@
       </form>
     </dialog>
 
+    <dialog id="login-dialog">
+      <form id="login-form">
+        <h3>MedicCare Login</h3>
+        <p class="login-hint">Demo: admin@mediccare.com / admin123</p>
+        <label>Email <input required name="email" type="email" autocomplete="username" /></label>
+        <label>Password <input required name="password" type="password" autocomplete="current-password" /></label>
+        <div class="dialog-actions">
+          <button type="submit" class="btn btn--primary">Sign In</button>
+        </div>
+      </form>
+    </dialog>
+
     <div class="toast" id="toast">
       <span id="toast-message"></span>
       <button id="toast-undo-btn" class="btn mini-btn">Undo</button>
     </div>
     <div class="chart-tooltip" id="chart-tooltip"></div>
+    <script src="./api.js"></script>
     <script src="./app.js"></script>
   </body>
 </html>
