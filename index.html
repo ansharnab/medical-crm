@@ -23,6 +23,12 @@
           </div>
         </div>
         <nav class="menu" id="menu"></nav>
+        <div class="sidebar__footer">
+          <label class="theme-toggle">
+            <input type="checkbox" id="theme-toggle" />
+            <span>Dark mode</span>
+          </label>
+        </div>
       </aside>
 
       <main class="content">
@@ -35,7 +41,13 @@
             </div>
           </div>
           <div class="topbar__actions">
+            <span class="live-status"><span class="pulse-dot"></span> Live</span>
+            <span class="live-clock" id="live-clock"></span>
             <span class="user-label" id="user-label"></span>
+            <div class="notif-wrap">
+              <button class="btn notif-btn" id="notif-btn" aria-label="Notifications">🔔 <span class="notif-badge" id="notif-badge">0</span></button>
+              <div class="notif-panel hidden" id="notif-panel"></div>
+            </div>
             <input id="global-search" type="search" placeholder="Search patients, doctors, invoices..." />
             <select id="role-select" aria-label="Select role">
               <option value="admin">Admin</option>
@@ -52,6 +64,46 @@
         <section class="workspace" id="workspace"></section>
       </main>
     </div>
+
+    <div class="loading-overlay hidden" id="loading-overlay">
+      <div class="loader"></div>
+    </div>
+
+    <dialog id="lab-dialog">
+      <form method="dialog" id="lab-form">
+        <h3>Add Lab Report</h3>
+        <label>Patient <input required name="patient" /></label>
+        <label>Test Name <input required name="testName" /></label>
+        <label>Result <input required name="result" /></label>
+        <label>Doctor <input required name="doctor" /></label>
+        <label>Status
+          <select name="status">
+            <option value="Normal">Normal</option>
+            <option value="Abnormal">Abnormal</option>
+            <option value="Critical">Critical</option>
+          </select>
+        </label>
+        <div class="dialog-actions">
+          <button value="cancel" class="btn" formnovalidate>Cancel</button>
+          <button value="default" class="btn btn--primary">Save Report</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="rx-dialog">
+      <form method="dialog" id="rx-form">
+        <h3>Add Prescription</h3>
+        <label>Patient <input required name="patient" /></label>
+        <label>Medicine <input required name="medicine" /></label>
+        <label>Dosage <input required name="dosage" placeholder="e.g. 500mg twice daily" /></label>
+        <label>Duration <input required name="duration" placeholder="e.g. 7 days" /></label>
+        <label>Doctor <input required name="doctor" /></label>
+        <div class="dialog-actions">
+          <button value="cancel" class="btn" formnovalidate>Cancel</button>
+          <button value="default" class="btn btn--primary">Save Prescription</button>
+        </div>
+      </form>
+    </dialog>
 
     <dialog id="quick-add-dialog">
       <form method="dialog" id="appointment-form">

@@ -36,6 +36,8 @@ const API = {
   login: (email, password) => apiFetch("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
   me: () => apiFetch("/api/auth/me"),
   dashboard: (period) => apiFetch(`/api/dashboard?period=${period}`),
+  notifications: () => apiFetch("/api/notifications"),
+  activity: () => apiFetch("/api/activity"),
   search: (q) => apiFetch(`/api/search?q=${encodeURIComponent(q)}`),
   exportSummary: () => apiFetch("/api/export/summary"),
   list: (entity) => apiFetch(`/api/${entity}`),

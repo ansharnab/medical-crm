@@ -1,6 +1,6 @@
 const ROLE_CONFIG = {
-  admin: { label: "Admin", views: ["dashboard", "patients", "appointments", "doctors", "billing", "inventory"] },
-  doctor: { label: "Doctor", views: ["dashboard", "patients", "appointments", "doctors"] },
+  admin: { label: "Admin", views: ["dashboard", "patients", "appointments", "doctors", "labs", "billing", "inventory"] },
+  doctor: { label: "Doctor", views: ["dashboard", "patients", "appointments", "doctors", "labs"] },
   receptionist: { label: "Receptionist", views: ["dashboard", "patients", "appointments", "billing"] },
 };
 
@@ -9,6 +9,7 @@ const menuItems = [
   { id: "patients", label: "Patients", description: "Patient profiles and priority triage list" },
   { id: "appointments", label: "Appointments", description: "Doctor schedules and slot planning" },
   { id: "doctors", label: "Doctors & Staff", description: "Provider roster, department and load" },
+  { id: "labs", label: "Lab & Rx", description: "Lab reports and active prescriptions" },
   { id: "billing", label: "Billing", description: "Invoices, payments and insurance follow-up" },
   { id: "inventory", label: "Inventory", description: "Pharmacy and consumables monitoring" },
 ];
@@ -25,7 +26,12 @@ const state = {
   invoices: [],
   inventoryItems: [],
   kitRequests: [],
-  dashboard: { footfall: { labels: [], values: [], suffix: "" }, deptLoad: [] },
+  labReports: [],
+  prescriptions: [],
+  departments: [],
+  notifications: [],
+  activity: [],
+  dashboard: { footfall: { labels: [], values: [], suffix: "" }, deptLoad: [], bedOccupancy: 0 },
 };
 
 let undoTimer = null;
@@ -68,6 +74,71 @@ const inventoryDialog = document.getElementById("inventory-dialog");
 const inventoryForm = document.getElementById("inventory-form");
 const kitDialog = document.getElementById("kit-dialog");
 const kitForm = document.getElementById("kit-form");
+const labDialog = document.getElementById("lab-dialog");
+const labForm = document.getElementById("lab-form");
+const rxDialog = document.getElementById("rx-dialog");
+const rxForm = document.getElementById("rx-form");
+const loadingOverlay = document.getElementById("loading-overlay");
+const themeToggle = document.getElementById("theme-toggle");
+const liveClock = document.getElementById("live-clock");
+const notifBtn = document.getElementById("notif-btn");
+const notifPanel = document.getElementById("notif-panel");
+const notifBadge = document.getElementById("notif-badge");
+
+function showLoading() {
+  loadingOverlay?.classList.remove("hidden");
+}
+
+function hideLoading() {
+  loadingOverlay?.classList.add("hidden");
+}
+
+function animateValue(el, end, isCurrency = false) {
+  if (!el || typeof end !== "number") {
+    if (el) el.textContent = end;
+    return;
+  }
+  const start = 0;
+  const duration = 600;
+  const startTime = performance.now();
+  const step = (now) => {
+    const progress = Math.min((now - startTime) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const val = Math.round(start + (end - start) * eased);
+    el.textContent = isCurrency ? formatINR(val) : val;
+    if (progress < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+function formatTimeAgo(iso) {
+  if (!iso) return "";
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return new Date(iso).toLocaleDateString("en-IN");
+}
+
+function initTheme() {
+  const dark = localStorage.getItem("mediccare_theme") === "dark";
+  document.body.classList.toggle("dark", dark);
+  if (themeToggle) themeToggle.checked = dark;
+}
+
+function initClock() {
+  const tick = () => {
+    if (liveClock) {
+      liveClock.textContent = new Date().toLocaleString("en-IN", {
+        weekday: "short", hour: "2-digit", minute: "2-digit", second: "2-digit",
+      });
+    }
+  };
+  tick();
+  setInterval(tick, 1000);
+}
 
 function formatINR(value) {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(value);
@@ -121,24 +192,48 @@ function ensureAllowedView() {
 }
 
 async function loadAllData() {
-  const [patients, appointments, doctors, staff, invoices, inventoryItems, kitRequests, dashboard] = await Promise.all([
-    API.list("patients"),
-    API.list("appointments"),
-    API.list("doctors"),
-    API.list("staff"),
-    API.list("invoices"),
-    API.list("inventory_items"),
-    API.list("kit_requests"),
-    API.dashboard(state.chartPeriod),
-  ]);
-  state.patients = patients;
-  state.appointments = appointments;
-  state.doctors = doctors;
-  state.staff = staff;
-  state.invoices = invoices;
-  state.inventoryItems = inventoryItems;
-  state.kitRequests = kitRequests;
-  state.dashboard = dashboard;
+  showLoading();
+  try {
+    const [patients, appointments, doctors, staff, invoices, inventoryItems, kitRequests, labReports, prescriptions, departments, notifications, activity, dashboard] = await Promise.all([
+      API.list("patients"),
+      API.list("appointments"),
+      API.list("doctors"),
+      API.list("staff"),
+      API.list("invoices"),
+      API.list("inventory_items"),
+      API.list("kit_requests"),
+      API.list("lab_reports"),
+      API.list("prescriptions"),
+      API.list("departments"),
+      API.notifications(),
+      API.activity(),
+      API.dashboard(state.chartPeriod),
+    ]);
+    Object.assign(state, { patients, appointments, doctors, staff, invoices, inventoryItems, kitRequests, labReports, prescriptions, departments, notifications, activity, dashboard });
+    renderNotifications();
+  } finally {
+    hideLoading();
+  }
+}
+
+function renderNotifications() {
+  const count = state.notifications.length;
+  if (notifBadge) {
+    notifBadge.textContent = count;
+    notifBadge.classList.toggle("hidden", count === 0);
+  }
+  if (!notifPanel) return;
+  if (!count) {
+    notifPanel.innerHTML = `<div class="notif-item"><p class="notif-item__msg">No alerts right now</p></div>`;
+    return;
+  }
+  notifPanel.innerHTML = state.notifications
+    .map((n, i) => `
+      <div class="notif-item notif-item--${n.type}" style="animation-delay:${i * 50}ms">
+        <p class="notif-item__title">${n.title}</p>
+        <p class="notif-item__msg">${n.message}</p>
+      </div>`)
+    .join("");
 }
 
 function renderMenu() {
@@ -163,15 +258,22 @@ function renderKpis() {
   const priorityCount = state.patients.filter((p) => p.risk !== "ok").length;
   const unpaid = state.invoices.filter((i) => i.status !== "Paid").reduce((sum, row) => sum + row.amount, 0);
   const kpis = [
-    { title: "Active Patients", value: state.patients.length },
-    { title: "Today's Appointments", value: state.appointments.length },
-    { title: "Doctors On Duty", value: state.doctors.length },
-    { title: "High Priority Cases", value: priorityCount },
-    { title: "Outstanding Revenue", value: formatINR(unpaid) },
+    { title: "Active Patients", value: state.patients.length, numeric: true },
+    { title: "Today's Appointments", value: state.appointments.length, numeric: true },
+    { title: "Doctors On Duty", value: state.doctors.length, numeric: true },
+    { title: "High Priority Cases", value: priorityCount, numeric: true },
+    { title: "Outstanding Revenue", value: unpaid, currency: true },
+    { title: "Bed Occupancy", value: `${state.dashboard.bedOccupancy || 0}%`, numeric: false },
   ];
   kpiGrid.innerHTML = kpis
-    .map((k) => `<article class="card"><p class="card__title">${k.title}</p><p class="card__value">${k.value}</p></article>`)
+    .map((k, i) => `<article class="card card--stagger" style="animation-delay:${i * 60}ms"><p class="card__title">${k.title}</p><p class="card__value" data-kpi="${i}">${k.currency ? formatINR(0) : k.numeric ? 0 : k.value}</p></article>`)
     .join("");
+  kpis.forEach((k, i) => {
+    const el = kpiGrid.querySelector(`[data-kpi="${i}"]`);
+    if (k.currency) animateValue(el, k.value, true);
+    else if (k.numeric) animateValue(el, k.value);
+    else if (el) el.textContent = k.value;
+  });
 }
 
 function table(headers, rows) {
@@ -191,7 +293,7 @@ function renderCharts() {
       ];
   return `
     <section class="split">
-      <article class="panel">
+      <article class="panel panel--stagger" style="animation-delay:0ms">
         <div class="panel__head">
           <h3>OPD Footfall</h3>
           <select data-action="chart-period">
@@ -205,7 +307,7 @@ function renderCharts() {
               (v, i) => `
               <div class="mini-chart__col">
                 <div class="mini-chart__bar-wrap">
-                  <div class="mini-chart__bar" data-tooltip="${opd.labels[i]}: ${v} ${opd.suffix || ""}" style="height:${Math.max(12, (v / max) * 100)}%"></div>
+                  <div class="mini-chart__bar" data-tooltip="${opd.labels[i]}: ${v} ${opd.suffix || ""}" style="height:${Math.max(12, (v / max) * 100)}%;animation-delay:${i * 80}ms"></div>
                 </div>
                 <span>${opd.labels[i]}</span>
               </div>`
@@ -213,41 +315,66 @@ function renderCharts() {
             .join("")}
         </div>
       </article>
-      <article class="panel">
+      <article class="panel panel--stagger" style="animation-delay:80ms">
         <h3>Department Load</h3>
         <div class="load-list">
           ${deptLoad
             .map(
-              (d) => `
+              (d, i) => `
               <div class="load-list__row">
                 <div class="load-list__meta"><span>${d.dept}</span><strong>${d.pct}%</strong></div>
-                <div class="load-list__track"><div class="load-list__fill" data-tooltip="${d.dept}: ${d.pct}% utilization" style="width:${d.pct}%"></div></div>
+                <div class="load-list__track"><div class="load-list__fill" data-tooltip="${d.dept}: ${d.pct}% utilization" style="width:${d.pct}%;animation-delay:${i * 100}ms"></div></div>
               </div>`
             )
             .join("")}
+        </div>
+        <div class="bed-meter">
+          <span style="font-size:0.85rem;color:var(--muted)">Bed Occupancy</span>
+          <div class="bed-meter__track"><div class="bed-meter__fill" style="width:${state.dashboard.bedOccupancy || 0}%"></div></div>
+          <strong>${state.dashboard.bedOccupancy || 0}%</strong>
         </div>
       </article>
     </section>`;
 }
 
+function renderActivityFeed() {
+  if (!state.activity.length) return "";
+  return `<article class="panel panel--stagger" style="animation-delay:160ms">
+    <h3>Recent Activity</h3>
+    <div class="activity-feed">
+      ${state.activity.slice(0, 8).map((a, i) => `
+        <div class="activity-item" style="animation-delay:${i * 40}ms">
+          <span class="activity-dot"></span>
+          <div>
+            <p class="activity-item__text"><strong>${a.userName}</strong> ${a.action} ${a.entity} — ${a.details}</p>
+            <p class="activity-item__time">${formatTimeAgo(a.createdAt)}</p>
+          </div>
+        </div>`).join("")}
+    </div>
+  </article>`;
+}
+
 function renderDashboard() {
   return `${renderCharts()}
     <section class="split">
-      <article class="panel">
+      <article class="panel panel--stagger" style="animation-delay:120ms">
         <h3>Today's Appointments</h3>
         ${table(
           ["Patient", "Doctor", "Slot", "Status"],
           state.appointments.map((a) => `<tr><td>${a.patient}</td><td>${a.doctor}</td><td>${a.slot}</td><td>${statusBadge(a.status)}</td></tr>`)
         )}
       </article>
-      <article class="panel">
+      <article class="panel panel--stagger" style="animation-delay:160ms">
         <h3>Triage Queue</h3>
         ${table(
           ["Patient", "Condition", "City", "Assigned To", "Priority"],
-          state.patients.map((p) => `<tr><td>${p.name}</td><td>${p.condition}</td><td>${p.city}</td><td>${p.doctor}</td><td>${riskBadge(p.risk)}</td></tr>`)
+          state.patients.filter((p) => p.risk !== "ok").map(
+            (p) => `<tr><td>${p.name}</td><td>${p.condition}</td><td>${p.city}</td><td>${p.doctor}</td><td>${riskBadge(p.risk)}</td></tr>`
+          )
         )}
       </article>
-    </section>`;
+    </section>
+    ${renderActivityFeed()}`;
 }
 
 function renderPatients() {
@@ -345,6 +472,40 @@ function renderBilling() {
     </article>`;
 }
 
+function renderLabs() {
+  const canModify = state.role !== "receptionist";
+  return `<section class="split">
+    <article class="panel panel--stagger">
+      <div class="panel__head">
+        <h3>Lab Reports</h3>
+        ${canModify ? '<button class="btn btn--primary" data-action="add-lab">+ Add Report</button>' : ""}
+      </div>
+      ${table(
+        ["Patient", "Test", "Result", "Status", "Doctor", "Actions"],
+        state.labReports.map((r) => `<tr>
+          <td>${r.patient}</td><td>${r.testName}</td><td>${r.result}</td>
+          <td>${statusBadge(r.status === "Normal" ? "Good" : r.status === "Critical" ? "Critical" : "Low")}</td>
+          <td>${r.doctor}</td>
+          <td>${canModify ? `<button class="btn mini-btn btn--danger" data-action="remove-lab" data-id="${r.id}">Remove</button>` : ""}</td>
+        </tr>`)
+      )}
+    </article>
+    <article class="panel panel--stagger" style="animation-delay:80ms">
+      <div class="panel__head">
+        <h3>Active Prescriptions</h3>
+        ${canModify ? '<button class="btn btn--primary" data-action="add-rx">+ Add Prescription</button>' : ""}
+      </div>
+      ${table(
+        ["Patient", "Medicine", "Dosage", "Duration", "Doctor", "Actions"],
+        state.prescriptions.map((r) => `<tr>
+          <td>${r.patient}</td><td>${r.medicine}</td><td>${r.dosage}</td><td>${r.duration}</td><td>${r.doctor}</td>
+          <td>${canModify ? `<button class="btn mini-btn btn--danger" data-action="remove-rx" data-id="${r.id}">Remove</button>` : ""}</td>
+        </tr>`)
+      )}
+    </article>
+  </section>`;
+}
+
 function renderInventory() {
   const canModify = state.role !== "doctor";
   return `<section class="split">
@@ -403,6 +564,7 @@ function renderWorkspace() {
   else if (state.view === "patients") workspace.innerHTML = renderPatients();
   else if (state.view === "appointments") workspace.innerHTML = renderAppointments();
   else if (state.view === "doctors") workspace.innerHTML = renderDoctors();
+  else if (state.view === "labs") workspace.innerHTML = renderLabs();
   else if (state.view === "billing") workspace.innerHTML = renderBilling();
   else workspace.innerHTML = renderInventory();
 }
@@ -846,6 +1008,40 @@ workspace.addEventListener("click", async (event) => {
     } catch (e) {
       showToast(e.message);
     }
+    return;
+  }
+
+  if (action === "add-lab") {
+    labForm.reset();
+    return labDialog.showModal();
+  }
+
+  if (action === "remove-lab") {
+    if (!window.confirm("Remove this lab report?")) return;
+    try {
+      await API.remove("lab_reports", id);
+      await refresh();
+      showToast("Lab report removed");
+    } catch (e) {
+      showToast(e.message);
+    }
+    return;
+  }
+
+  if (action === "add-rx") {
+    rxForm.reset();
+    return rxDialog.showModal();
+  }
+
+  if (action === "remove-rx") {
+    if (!window.confirm("Remove this prescription?")) return;
+    try {
+      await API.remove("prescriptions", id);
+      await refresh();
+      showToast("Prescription removed");
+    } catch (e) {
+      showToast(e.message);
+    }
   }
 });
 
@@ -861,6 +1057,66 @@ roleSelect.addEventListener("change", (event) => {
 });
 
 menuToggleBtn.addEventListener("click", () => sidebar.classList.toggle("open"));
+
+themeToggle?.addEventListener("change", () => {
+  const dark = themeToggle.checked;
+  document.body.classList.toggle("dark", dark);
+  localStorage.setItem("mediccare_theme", dark ? "dark" : "light");
+});
+
+notifBtn?.addEventListener("click", (e) => {
+  e.stopPropagation();
+  notifPanel?.classList.toggle("hidden");
+});
+
+document.addEventListener("click", () => notifPanel?.classList.add("hidden"));
+
+labForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (event.submitter?.value === "cancel") return labDialog.close();
+  const form = new FormData(labForm);
+  try {
+    await API.create("lab_reports", {
+      patient: String(form.get("patient")).trim(),
+      testName: String(form.get("testName")).trim(),
+      result: String(form.get("result")).trim(),
+      status: String(form.get("status")),
+      reportDate: new Date().toISOString().slice(0, 10),
+      doctor: String(form.get("doctor")).trim(),
+    });
+    labDialog.close();
+    labForm.reset();
+    await refresh();
+    showToast("Lab report added");
+  } catch (e) {
+    showToast(e.message);
+  }
+});
+
+rxForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (event.submitter?.value === "cancel") return rxDialog.close();
+  const form = new FormData(rxForm);
+  try {
+    await API.create("prescriptions", {
+      patient: String(form.get("patient")).trim(),
+      medicine: String(form.get("medicine")).trim(),
+      dosage: String(form.get("dosage")).trim(),
+      duration: String(form.get("duration")).trim(),
+      doctor: String(form.get("doctor")).trim(),
+      status: "Active",
+    });
+    rxDialog.close();
+    rxForm.reset();
+    await refresh();
+    showToast("Prescription added");
+  } catch (e) {
+    showToast(e.message);
+  }
+});
+
+initTheme();
+initClock();
 
 async function boot() {
   const token = getToken();
