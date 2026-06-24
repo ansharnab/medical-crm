@@ -1,0 +1,1866 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doctor CRM — Premium Interactive Prototype</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #2563eb; --primary2: #3b82f6; --accent: #06b6d4; --purple: #8b5cf6;
+      --success: #10b981; --warning: #f59e0b; --danger: #ef4444; --pink: #ec4899;
+      --primary-glow: rgba(37,99,235,0.4);
+      --bg: #eef2f7; --bg-elevated: #fff; --text: #0f172a; --text-muted: #64748b;
+      --border: rgba(148,163,184,0.22);
+      --shadow: 0 8px 32px rgba(15,23,42,0.07);
+      --shadow-lg: 0 24px 64px rgba(15,23,42,0.14);
+      --radius: 16px; --radius-sm: 12px;
+      --font-display: 'Plus Jakarta Sans', Inter, sans-serif;
+    }
+    [data-theme="dark"] {
+      --bg: #070d19; --bg-elevated: #111827; --text: #f1f5f9; --text-muted: #94a3b8;
+      --border: rgba(148,163,184,0.1); --shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
+
+    /* animated mesh bg */
+    .preview-area {
+      flex: 1; overflow-y: auto; padding: 20px 24px;
+      background: var(--bg);
+      background-image:
+        radial-gradient(ellipse 100% 80% at 10% 0%, rgba(37,99,235,0.07), transparent 50%),
+        radial-gradient(ellipse 80% 60% at 90% 10%, rgba(6,182,212,0.06), transparent 45%),
+        radial-gradient(ellipse 60% 50% at 50% 100%, rgba(139,92,246,0.05), transparent 40%);
+    }
+
+    .app { display: flex; flex-direction: column; height: 100vh; }
+    .topbar {
+      display: flex; align-items: center; gap: 12px; padding: 10px 18px;
+      background: rgba(255,255,255,0.85); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border); z-index: 50;
+    }
+    [data-theme="dark"] .topbar { background: rgba(17,24,39,0.9); }
+    .logo { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 800; font-size: 15px; }
+    .logo-icon {
+      width: 38px; height: 38px; border-radius: 12px;
+      background: linear-gradient(135deg, #2563eb, #06b6d4, #8b5cf6);
+      background-size: 200% 200%; animation: gradShift 4s ease infinite;
+      display: grid; place-items: center; color: #fff; font-size: 20px;
+      box-shadow: 0 6px 20px var(--primary-glow);
+    }
+    @keyframes gradShift { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+
+    .progress-wrap { flex: 1; max-width: 280px; display: none; }
+    @media(min-width:768px){.progress-wrap{display:block}}
+    .progress-bar { height: 5px; background: var(--border); border-radius: 99px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg,#2563eb,#06b6d4,#8b5cf6); background-size: 200%; animation: gradShift 3s linear infinite; transition: width 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+    .progress-label { font-size: 10px; color: var(--text-muted); text-align: center; margin-top: 3px; }
+
+    .icon-btn { width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-elevated); cursor: pointer; font-size: 16px; transition: all 0.25s; color: var(--text); }
+    .icon-btn:hover { background: var(--primary); color: #fff; transform: scale(1.08); box-shadow: 0 4px 16px var(--primary-glow); }
+
+    .badge { font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 99px; letter-spacing: 0.02em; }
+    .badge-mvp { background: rgba(100,116,139,0.12); color: var(--text-muted); }
+    .badge-new { background: linear-gradient(135deg,rgba(37,99,235,0.12),rgba(139,92,246,0.12)); color: var(--primary); border: 1px solid rgba(37,99,235,0.2); }
+
+    .layout { display: flex; flex: 1; overflow: hidden; }
+    .sidebar {
+      width: 250px; background: linear-gradient(180deg,#0c1222 0%,#151d32 100%);
+      padding: 14px 10px; overflow-y: auto; flex-shrink: 0; transition: transform 0.35s; z-index: 40;
+    }
+    .nav-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: #475569; padding: 12px 12px 6px; }
+    .nav-btn {
+      display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; margin-bottom: 3px;
+      border: none; border-radius: 10px; background: transparent; color: #94a3b8;
+      font-size: 12px; font-weight: 500; cursor: pointer; text-align: left; transition: all 0.25s;
+    }
+    .nav-btn:hover { background: rgba(255,255,255,0.06); color: #fff; transform: translateX(3px); }
+    .nav-btn.active { background: linear-gradient(135deg,rgba(37,99,235,0.9),rgba(6,182,212,0.7)); color: #fff; box-shadow: 0 4px 20px rgba(37,99,235,0.35); }
+
+    .main-col { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .screen-header { padding: 16px 22px; background: var(--bg-elevated); border-bottom: 1px solid var(--border); }
+    .screen-header h2 { font-family: var(--font-display); font-size: 21px; font-weight: 800; letter-spacing: -0.03em; }
+    .screen-header p { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+    .breadcrumb { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .breadcrumb .cur { color: var(--primary); font-weight: 600; }
+
+    .screen-stage { animation: stageIn 0.5s cubic-bezier(0.22,1,0.36,1); }
+    @keyframes stageIn { from{opacity:0;transform:translateY(20px) scale(0.97)} to{opacity:1;transform:none} }
+    .screen-stage.exit { animation: stageOut 0.22s ease forwards; }
+    @keyframes stageOut { to{opacity:0;transform:translateY(-10px)} }
+
+    .panel-right { width: 290px; background: var(--bg-elevated); border-left: 1px solid var(--border); padding: 18px; overflow-y: auto; transition: transform 0.35s; }
+    .feature-item {
+      display: flex; gap: 10px; padding: 10px; margin-bottom: 7px; background: var(--bg);
+      border-radius: 10px; border: 1px solid var(--border); font-size: 11px; line-height: 1.5; color: var(--text-muted);
+      animation: fadeUp 0.45s ease backwards;
+    }
+    .feature-item:nth-child(2){animation-delay:.05s} .feature-item:nth-child(3){animation-delay:.1s} .feature-item:nth-child(4){animation-delay:.15s}
+    @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+    .fdot { width: 7px; height: 7px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+    .fdot.mvp{background:var(--success)} .fdot.new{background:var(--primary);box-shadow:0 0 8px var(--primary-glow)}
+    .gap-card { margin-top: 14px; padding: 12px; border-radius: 10px; font-size: 11px; line-height: 1.55; color: var(--text-muted); background: linear-gradient(135deg,rgba(37,99,235,0.05),rgba(139,92,246,0.04)); border: 1px solid rgba(37,99,235,0.12); }
+
+    .footer-nav { display: flex; align-items: center; gap: 10px; padding: 12px 18px; background: var(--bg-elevated); border-top: 1px solid var(--border); }
+    .btn { padding: 10px 18px; border-radius: 10px; border: none; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.25s; display: inline-flex; align-items: center; gap: 6px; font-family: inherit; }
+    .btn-primary { background: linear-gradient(135deg,#2563eb,#3b82f6); color: #fff; box-shadow: 0 4px 18px var(--primary-glow); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 28px var(--primary-glow); }
+    .btn-ghost { background: var(--bg); border: 1px solid var(--border); color: var(--text); }
+    .btn-play { background: linear-gradient(135deg,#059669,#10b981); color: #fff; }
+    .step-dots { flex: 1; display: flex; justify-content: center; gap: 5px; flex-wrap: wrap; }
+    .sdot { width: 9px; height: 9px; border-radius: 50%; background: var(--border); transition: all 0.3s; cursor: pointer; }
+    .sdot.on { background: var(--primary); transform: scale(1.35); box-shadow: 0 0 10px var(--primary-glow); }
+    .sdot.done { background: var(--success); }
+
+    /* ── Cards & layout ── */
+    .grid2 { display: grid; grid-template-columns: repeat(auto-fit,minmax(260px,1fr)); gap: 14px; }
+    .grid3 { display: grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap: 14px; }
+    .card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); animation: fadeUp 0.5s ease backwards; }
+    .card-head { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; font-family: var(--font-display); }
+    .card-body { padding: 16px; }
+    .pill { display: inline-block; padding: 2px 9px; border-radius: 99px; font-size: 10px; font-weight: 700; }
+    .pill-g { background: rgba(16,185,129,0.12); color: var(--success); }
+    .pill-b { background: rgba(37,99,235,0.12); color: var(--primary); }
+    .pill-a { background: rgba(245,158,11,0.12); color: var(--warning); }
+    .pill-r { background: rgba(239,68,68,0.12); color: var(--danger); }
+
+    .device-frame { background: var(--bg-elevated); border-radius: 18px; border: 1px solid var(--border); box-shadow: var(--shadow-lg); overflow: hidden; }
+    .device-bar { display: flex; align-items: center; gap: 7px; padding: 9px 14px; background: var(--bg); border-bottom: 1px solid var(--border); }
+    .dd { width: 9px; height: 9px; border-radius: 50%; }
+    .dd.r{background:#ef4444}.dd.y{background:#eab308}.dd.g{background:#22c55e}
+    .durl { flex: 1; margin-left: 6px; padding: 5px 10px; background: var(--bg-elevated); border-radius: 7px; font-size: 10px; color: var(--text-muted); font-family: monospace; }
+
+    .mock-app { display: flex; min-height: 440px; }
+    .mock-side { width: 185px; background: linear-gradient(180deg,#0f172a,#1e293b); padding: 14px 8px; flex-shrink: 0; }
+    .mock-brand { color: #fff; font-weight: 800; font-size: 13px; padding: 6px 10px 18px; font-family: var(--font-display); border: none; background: transparent; cursor: pointer; width: 100%; text-align: left; transition: opacity 0.2s; }
+    .mock-brand:hover { opacity: 0.85; }
+    .mnav { padding: 8px 10px; border-radius: 8px; font-size: 11px; color: #64748b; margin-bottom: 3px; display: block; width: 100%; text-align: left; border: none; background: transparent; font-family: inherit; cursor: pointer; transition: background 0.2s, color 0.2s; }
+    .mnav:hover:not(.on):not(:disabled) { background: rgba(255,255,255,0.08); color: #e2e8f0; }
+    .mnav.on { background: linear-gradient(135deg,rgba(37,99,235,0.85),rgba(6,182,212,0.6)); color: #fff; }
+    .mnav:disabled { opacity: 0.45; cursor: not-allowed; }
+    .mock-main { flex: 1; padding: 16px; background: var(--bg); overflow: auto; }
+
+    /* ── KPI cards with sparkline ── */
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap: 12px; margin-bottom: 16px; }
+    .kpi {
+      background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 14px 16px; position: relative; overflow: hidden; transition: transform 0.3s, box-shadow 0.3s;
+      animation: fadeUp 0.5s ease backwards;
+    }
+    .kpi:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); }
+    .kpi-icon { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; font-size: 16px; margin-bottom: 10px; }
+    .kpi label { font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .kpi .val { font-family: var(--font-display); font-size: 26px; font-weight: 800; margin: 4px 0; letter-spacing: -0.03em; }
+    .kpi .trend { font-size: 10px; font-weight: 700; }
+    .kpi .trend.up { color: var(--success); }
+    .kpi-spark { position: absolute; bottom: 0; right: 0; left: 0; height: 40px; opacity: 0.6; }
+
+    /* ── Charts ── */
+    .chart-wrap { position: relative; }
+    .chart-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--text-muted); font-weight: 500; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+    .donut-wrap { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; justify-content: center; }
+    .donut {
+      width: 130px; height: 130px; border-radius: 50%; position: relative;
+      animation: donutSpin 1s cubic-bezier(0.34,1.56,0.64,1) backwards;
+    }
+    @keyframes donutSpin { from{transform:scale(0) rotate(-90deg);opacity:0} to{transform:scale(1) rotate(0);opacity:1} }
+    .donut-hole {
+      position: absolute; inset: 22px; border-radius: 50%; background: var(--bg-elevated);
+      display: grid; place-items: center; text-align: center;
+    }
+    .donut-hole strong { font-family: var(--font-display); font-size: 22px; font-weight: 800; display: block; }
+    .donut-hole span { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 130px; padding: 0 4px; }
+    .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+    .bar-fill {
+      width: 100%; border-radius: 6px 6px 2px 2px; min-height: 4px;
+      animation: barUp 0.9s cubic-bezier(0.34,1.56,0.64,1) backwards;
+      position: relative; overflow: hidden;
+    }
+    .bar-fill::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg,rgba(255,255,255,0.25),transparent); }
+    @keyframes barUp { from{height:0!important;opacity:0} }
+    .bar-label { font-size: 9px; color: var(--text-muted); font-weight: 600; }
+
+    .h-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 11px; }
+    .h-bar-label { width: 80px; flex-shrink: 0; font-weight: 600; color: var(--text-muted); font-size: 10px; }
+    .h-bar-track { flex: 1; height: 10px; background: var(--bg); border-radius: 99px; overflow: hidden; }
+    .h-bar-fill { height: 100%; border-radius: 99px; animation: hBarGrow 0.8s cubic-bezier(0.34,1.56,0.64,1) backwards; }
+    @keyframes hBarGrow { from{width:0!important} }
+    .h-bar-val { width: 36px; text-align: right; font-weight: 700; font-size: 10px; }
+
+    .area-chart svg { width: 100%; height: auto; display: block; }
+    .area-line { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .area-fill { opacity: 0.15; }
+
+    .gauge-row { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+    .gauge { text-align: center; }
+    .gauge svg { display: block; margin: 0 auto; }
+    .gauge-label { font-size: 10px; color: var(--text-muted); margin-top: 4px; font-weight: 600; }
+    .gauge-val { font-family: var(--font-display); font-size: 14px; font-weight: 800; }
+
+    .heatmap { display: grid; grid-template-columns: repeat(12,1fr); gap: 4px; }
+    .hm-cell {
+      aspect-ratio: 1; border-radius: 4px; animation: hmPop 0.4s ease backwards;
+      transition: transform 0.2s;
+    }
+    .hm-cell:hover { transform: scale(1.15); }
+    @keyframes hmPop { from{opacity:0;transform:scale(0.5)} }
+
+    .queue-cards { display: flex; gap: 12px; flex-wrap: wrap; }
+    .qcard {
+      flex: 1; min-width: 140px; padding: 16px; border-radius: var(--radius); text-align: center;
+      border: 2px solid var(--border); background: var(--bg-elevated);
+      animation: fadeUp 0.5s ease backwards; transition: all 0.3s;
+    }
+    .qcard.active { border-color: var(--primary); box-shadow: 0 0 24px var(--primary-glow); transform: scale(1.03); }
+    .qcard .token { font-family: var(--font-display); font-size: 32px; font-weight: 800; color: var(--primary); }
+    .qcard .name { font-size: 12px; font-weight: 600; margin-top: 4px; }
+    .qcard .wait { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+    .login-scene { display: flex; min-height: 420px; }
+    .login-left {
+      flex: 1.1; padding: 36px; color: #fff; position: relative; overflow: hidden;
+      background: linear-gradient(135deg,#0f172a 0%,#1e3a8a 40%,#2563eb 70%,#06b6d4 100%);
+      display: flex; flex-direction: column; justify-content: center;
+    }
+    .login-left::before {
+      content: ''; position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+    .login-left h2 { font-family: var(--font-display); font-size: 30px; font-weight: 800; line-height: 1.2; position: relative; z-index: 1; }
+    .login-left p { font-size: 13px; opacity: 0.88; line-height: 1.65; margin-top: 12px; position: relative; z-index: 1; max-width: 320px; }
+    .login-stats { display: flex; gap: 20px; margin-top: 28px; position: relative; z-index: 1; }
+    .login-stat strong { font-family: var(--font-display); font-size: 24px; display: block; }
+    .login-stat span { font-size: 10px; opacity: 0.7; }
+    .login-right { flex: 1; display: flex; align-items: center; justify-content: center; padding: 32px; background: var(--bg-elevated); }
+    .login-form { width: 100%; max-width: 320px; }
+    .login-form h3 { font-family: var(--font-display); font-size: 22px; font-weight: 800; margin-bottom: 20px; }
+    .field { width: 100%; padding: 11px 13px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); font-size: 13px; margin-top: 5px; }
+    .field-label { font-size: 11px; font-weight: 600; color: var(--text-muted); }
+
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { padding: 9px 12px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); background: var(--bg); font-weight: 700; }
+    td { padding: 10px 12px; border-top: 1px solid var(--border); }
+    tbody tr { transition: background 0.2s; }
+    tbody tr:hover { background: rgba(37,99,235,0.04); }
+
+    .hero-banner {
+      border-radius: var(--radius); padding: 28px; margin-bottom: 18px; color: #fff; position: relative; overflow: hidden;
+      background: linear-gradient(135deg,#1e40af,#2563eb 40%,#7c3aed);
+      box-shadow: 0 16px 48px rgba(37,99,235,0.3);
+    }
+    .hero-banner h2 { font-family: var(--font-display); font-size: 26px; font-weight: 800; }
+    .hero-banner p { font-size: 13px; opacity: 0.9; margin-top: 8px; max-width: 500px; line-height: 1.6; }
+    .hero-banner .orbs { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); opacity: 0.5; }
+
+    .module-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap: 12px; }
+    .module-card {
+      padding: 18px; border-radius: var(--radius); background: var(--bg-elevated); border: 1px solid var(--border);
+      text-align: center; transition: all 0.3s; cursor: default;
+    }
+    .module-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-lg); border-color: rgba(37,99,235,0.3); }
+    .module-card .icon { font-size: 28px; margin-bottom: 8px; }
+    .module-card strong { font-size: 12px; font-family: var(--font-display); display: block; }
+    .module-card span { font-size: 10px; color: var(--text-muted); margin-top: 4px; display: block; }
+
+    .rx-visual { display: flex; gap: 10px; align-items: center; padding: 12px; background: var(--bg); border-radius: 10px; margin-bottom: 8px; border: 1px solid var(--border); animation: fadeUp 0.4s ease backwards; }
+    .rx-pill { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; font-size: 18px; flex-shrink: 0; }
+
+    .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(60px); background: #0f172a; color: #fff; padding: 11px 22px; border-radius: 99px; font-size: 12px; font-weight: 600; z-index: 200; opacity: 0; transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1); box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 35; }
+    .sidebar-overlay.open { display: block; }
+
+    @media(max-width:1024px) {
+      .panel-right { position: fixed; right: 0; top: 0; bottom: 0; z-index: 45; transform: translateX(100%); box-shadow: var(--shadow-lg); }
+      .panel-right.open { transform: translateX(0); }
+    }
+    @media(max-width:768px) {
+      .sidebar { position: fixed; left: 0; top: 0; bottom: 0; transform: translateX(-100%); box-shadow: var(--shadow-lg); }
+      .sidebar.open { transform: translateX(0); }
+      .login-scene { flex-direction: column; }
+      .mock-side { display: none; }
+      .step-dots { display: none; }
+      .kpis { grid-template-columns: repeat(2,1fr); }
+    }
+
+    /* ── Interactive / working UI ── */
+    .hint-bar {
+      display: flex; align-items: center; gap: 8px; padding: 10px 14px; margin-bottom: 14px;
+      background: linear-gradient(135deg, rgba(37,99,235,0.1), rgba(6,182,212,0.06));
+      border: 1px dashed rgba(37,99,235,0.35); border-radius: 10px; font-size: 11px; color: var(--primary); font-weight: 600;
+    }
+    .hint-bar span { opacity: 0.7; font-weight: 500; color: var(--text-muted); }
+    .quick-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .qa-btn {
+      padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-elevated);
+      font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s; color: var(--text);
+    }
+    .qa-btn:hover { border-color: var(--primary); color: var(--primary); background: rgba(37,99,235,0.06); transform: translateY(-1px); }
+    .activity-feed {
+      margin-top: 16px; padding: 12px; background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 10px; max-height: 110px; overflow-y: auto;
+    }
+    .act-head { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
+    .act-item { font-size: 11px; padding: 5px 0; border-bottom: 1px solid var(--border); color: var(--text-muted); animation: fadeUp 0.3s ease; }
+    .act-item:last-child { border: none; }
+    .act-time { color: var(--primary); font-weight: 700; margin-right: 6px; font-family: monospace; font-size: 10px; }
+    .act-empty { font-size: 11px; color: var(--text-muted); font-style: italic; }
+
+    .click-row { cursor: pointer; transition: background 0.15s; }
+    .click-row:hover { background: rgba(37,99,235,0.06) !important; }
+    .click-row.selected { background: rgba(37,99,235,0.12) !important; outline: 2px solid rgba(37,99,235,0.25); }
+
+    .slot-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-top: 10px; }
+    .slot-btn {
+      padding: 10px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg);
+      font-size: 11px; font-weight: 600; cursor: pointer; text-align: center; transition: all 0.2s;
+    }
+    .slot-btn:hover:not(.full) { border-color: var(--primary); }
+    .slot-btn.picked { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: 0 4px 12px var(--primary-glow); }
+    .slot-btn.full { opacity: 0.45; cursor: not-allowed; text-decoration: line-through; }
+
+    .pay-btn { flex: 1; min-width: 70px; justify-content: center; }
+    .pay-btn.active { background: linear-gradient(135deg,#2563eb,#3b82f6) !important; color: #fff !important; border-color: transparent !important; }
+
+    .qcard { cursor: pointer; user-select: none; }
+    .qcard.called { opacity: 0.45; transform: scale(0.96); border-color: var(--success) !important; }
+    .qcard .call-btn { margin-top: 10px; width: 100%; padding: 6px; font-size: 10px; border-radius: 6px; border: none; background: var(--primary); color: #fff; font-weight: 700; cursor: pointer; display: none; position: relative; z-index: 2; }
+    .qcard.active .call-btn { display: block; }
+
+    .success-box {
+      text-align: center; padding: 20px; border-radius: 12px;
+      background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.04));
+      border: 1px solid rgba(16,185,129,0.3); animation: fadeUp 0.4s ease;
+    }
+    .success-box .check { font-size: 40px; margin-bottom: 8px; }
+    .field-live { width: 100%; padding: 11px 13px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); font-size: 13px; color: var(--text); }
+    .field-live:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+    .field-live.err { border-color: var(--danger); }
+    .field-err { font-size: 10px; color: var(--danger); margin-top: 4px; display: none; }
+    .field-err.show { display: block; }
+
+    .search-box {
+      display: flex; align-items: center; gap: 8px; padding: 8px 12px; margin-bottom: 12px;
+      background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px;
+    }
+    .search-box input { flex: 1; border: none; background: transparent; font-size: 12px; color: var(--text); outline: none; }
+
+    .modal-bg {
+      position: fixed; inset: 0; background: rgba(15,23,42,0.55); z-index: 300;
+      display: grid; place-items: center; padding: 20px; animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+    .modal-box {
+      background: var(--bg-elevated); border-radius: 16px; padding: 24px; max-width: 420px; width: 100%;
+      box-shadow: var(--shadow-lg); animation: stageIn 0.35s ease;
+    }
+    .modal-box h4 { font-family: var(--font-display); font-size: 18px; margin-bottom: 12px; }
+    .btn-loading { opacity: 0.7; pointer-events: none; position: relative; }
+    .btn-loading::after { content: ''; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; margin-left: 6px; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+
+    .module-card { cursor: pointer; }
+    .module-card:active { transform: scale(0.97); }
+    .kpi.clickable { cursor: pointer; }
+    .kpi.clickable:active { transform: scale(0.98); }
+
+    .rx-del { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 16px; padding: 4px 8px; border-radius: 6px; }
+    .rx-del:hover { background: rgba(239,68,68,0.1); }
+    .vitals-input { width: 60px; padding: 6px; border: 1px solid var(--border); border-radius: 6px; text-align: center; font-weight: 700; font-size: 13px; background: var(--bg); color: var(--text); }
+    .clock-live { font-family: monospace; font-size: 11px; color: var(--success); font-weight: 700; }
+
+    /* ── Interactive charts (cover + dashboards) ── */
+    .cover-toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+    .period-btn {
+      padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-elevated);
+      font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; color: var(--text-muted);
+    }
+    .period-btn.on { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: 0 4px 12px var(--primary-glow); }
+    .period-btn:hover:not(.on) { border-color: var(--primary); color: var(--primary); }
+    .card.interactive { cursor: default; transition: box-shadow 0.25s, border-color 0.25s; }
+    .card.interactive:hover { border-color: rgba(37,99,235,0.35); box-shadow: var(--shadow-lg); }
+    .card.interactive .card-head::after { content: '↗ click'; font-size: 9px; font-weight: 600; color: var(--primary); opacity: 0.6; }
+    .chart-card-body { position: relative; }
+    .legend-btn {
+      display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--text-muted); font-weight: 500;
+      border: none; background: var(--bg); padding: 6px 10px; border-radius: 8px; cursor: pointer; margin-bottom: 4px;
+      width: 100%; text-align: left; transition: all 0.2s;
+    }
+    .legend-btn:hover { background: rgba(37,99,235,0.08); color: var(--primary); transform: translateX(4px); }
+    .legend-btn.sel { background: rgba(37,99,235,0.12); color: var(--primary); font-weight: 700; outline: 1px solid rgba(37,99,235,0.25); }
+    .hm-cell { cursor: pointer; }
+    .hm-cell.sel { outline: 2px solid var(--primary); transform: scale(1.2); z-index: 1; box-shadow: 0 4px 12px var(--primary-glow); }
+    .bar-fill.click-bar { cursor: pointer; transition: filter 0.2s, transform 0.2s; }
+    .bar-fill.click-bar:hover { filter: brightness(1.15); transform: scaleY(1.05); transform-origin: bottom; }
+    .bar-fill.click-bar.sel { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .area-dot { fill: var(--bg-elevated); stroke: var(--primary); stroke-width: 2; cursor: pointer; transition: r 0.2s; }
+    .area-dot:hover, .area-dot.sel { r: 7; fill: var(--primary); stroke: #fff; stroke-width: 2; }
+    .h-bar-row.click-doc { cursor: pointer; padding: 4px 6px; margin: 0 -6px 6px; border-radius: 8px; transition: background 0.2s; }
+    .h-bar-row.click-doc:hover { background: rgba(37,99,235,0.06); }
+    .h-bar-row.click-doc.sel { background: rgba(37,99,235,0.1); outline: 1px solid rgba(37,99,235,0.2); }
+    .chart-detail {
+      margin-top: 10px; padding: 10px 12px; background: var(--bg); border-radius: 8px; font-size: 11px;
+      color: var(--text-muted); border: 1px solid var(--border); min-height: 36px;
+    }
+    .chart-detail strong { color: var(--text); }
+    .filter-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .filter-pill {
+      padding: 5px 12px; border-radius: 99px; border: 1px solid var(--border); background: var(--bg);
+      font-size: 10px; font-weight: 700; cursor: pointer; transition: all 0.2s; color: var(--text-muted);
+    }
+    .filter-pill.on { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .portal-card { cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+    .portal-card:hover { transform: translateX(6px); box-shadow: var(--shadow); }
+    .portal-card.done { border-color: rgba(16,185,129,0.4); opacity: 0.85; }
+    .stock-row { display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg); border-radius: 10px; margin-bottom: 8px; border: 1px solid var(--border); }
+    .stock-row.low { border-color: rgba(245,158,11,0.4); background: rgba(245,158,11,0.04); }
+    .stock-row.out { border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.04); }
+    .hero-live { display: flex; gap: 16px; margin-top: 16px; position: relative; z-index: 1; flex-wrap: wrap; }
+    .hero-live span { font-size: 10px; opacity: 0.75; display: block; }
+    .hero-live strong { font-family: var(--font-display); font-size: 20px; }
+    .hero-actions { display: flex; gap: 8px; margin-top: 16px; position: relative; z-index: 1; flex-wrap: wrap; }
+    .hero-actions .btn { font-size: 11px; padding: 8px 14px; }
+
+    /* Stop flicker on state-only updates (live timers, filters, etc.) */
+    .no-animate, .no-animate *, .no-animate *::before, .no-animate *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+
+    /* Figma export — open wireframe-demo.html?figma=export */
+    html.figma-export, html.figma-export body { height: auto; overflow: auto; }
+    html.figma-export * { animation: none !important; }
+    .figma-export-root {
+      display: flex; flex-direction: column; align-items: flex-start; gap: 48px;
+      padding: 40px; background: #cbd5e1; min-height: 100vh;
+    }
+    .figma-export-banner {
+      width: 1440px; padding: 28px 32px; background: #fff; border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(15,23,42,0.12);
+    }
+    .figma-export-banner h1 { font-family: var(--font-display); font-size: 28px; margin-bottom: 8px; }
+    .figma-export-banner p { color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+    .figma-export-dl {
+      margin-top: 16px; padding: 12px 20px; background: #2563eb; color: #fff; border: none;
+      border-radius: 10px; font-weight: 600; font-size: 13px; cursor: pointer;
+    }
+    .figma-export-frame {
+      width: 1440px; background: var(--bg); border-radius: 12px; overflow: hidden;
+      box-shadow: 0 12px 40px rgba(15,23,42,0.15);
+    }
+    .figma-export-label {
+      background: linear-gradient(135deg, #2563eb, #06b6d4); color: #fff;
+      padding: 14px 24px; font-weight: 700; font-size: 14px; font-family: var(--font-display);
+    }
+    .figma-export-content { padding: 16px 20px 24px; }
+    .figma-export-content .mock-shell { max-width: 100%; }
+
+    /* Presenter · Tour · TV · SMS */
+    html.presenter-mode .sidebar, html.presenter-mode .panel-right, html.presenter-mode .screen-header { display: none !important; }
+    html.presenter-mode .footer-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; opacity: 0.15; transition: opacity 0.3s; }
+    html.presenter-mode .footer-nav:hover { opacity: 1; }
+    html.presenter-mode .topbar { background: rgba(15,23,42,0.95); color: #fff; }
+    html.presenter-mode .topbar .logo span, html.presenter-mode .icon-btn { color: #fff; }
+    .tour-spotlight { position: fixed; inset: 0; z-index: 200; pointer-events: none; }
+    .tour-box {
+      position: fixed; z-index: 201; max-width: 280px; background: #0f172a; color: #fff;
+      padding: 16px 18px; border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+      border: 1px solid rgba(37,99,235,0.4); pointer-events: auto;
+    }
+    .tour-box button { margin-top: 10px; padding: 8px 14px; border-radius: 8px; border: none; background: #2563eb; color: #fff; font-weight: 600; cursor: pointer; }
+    .tv-display {
+      min-height: 420px; background: linear-gradient(180deg,#0c1222,#151d32); color: #fff; border-radius: 16px;
+      padding: 32px; text-align: center; display: flex; flex-direction: column; justify-content: center;
+    }
+    .tv-token { font-size: 96px; font-weight: 800; font-family: var(--font-display); line-height: 1; color: #38bdf8; }
+    .sms-toast {
+      position: fixed; top: 72px; right: 20px; z-index: 300; background: #25d366; color: #fff;
+      padding: 12px 16px; border-radius: 12px; font-size: 12px; font-weight: 600; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      transform: translateX(120%); transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .sms-toast.show { transform: translateX(0); }
+    .mobile-shell { max-width: 390px; margin: 0 auto; border: 8px solid #1e293b; border-radius: 28px; overflow: hidden; background: var(--bg); }
+    .audit-row { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+    .audit-row time { color: var(--text-muted); min-width: 120px; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <button class="icon-btn" id="menuBtn">☰</button>
+    <div class="logo"><div class="logo-icon">⚕</div><span>Doctor CRM Pro</span></div>
+    <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="progFill" style="width:0"></div></div><div class="progress-label" id="progLabel">Ready</div></div>
+    <span class="badge badge-mvp" id="badge">MVP</span>
+    <button class="icon-btn" id="presentBtn" title="Presenter mode">⛶</button>
+    <button class="icon-btn" id="tourBtn" title="Guided tour">?</button>
+    <button class="icon-btn" id="langBtn" title="हिंदी / English">अ</button>
+    <button class="icon-btn" id="panelBtn">ℹ</button>
+    <button class="icon-btn" id="themeBtn">◐</button>
+  </header>
+  <div class="sidebar-overlay" id="overlay"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="nav-label">Demo flows</div>
+      <button class="nav-btn active" data-flow="e2e">▶ End-to-end journey</button>
+      <button class="nav-btn" data-flow="reception">◉ Reception ops</button>
+      <button class="nav-btn" data-flow="doctor">✚ Doctor clinical</button>
+      <button class="nav-btn" data-flow="new">★ NEW modules</button>
+      <button class="nav-btn" data-flow="super">◆ Super Admin</button>
+      <div class="nav-label">Jump to</div>
+      <button class="nav-btn" data-go="cover">◈ Overview dashboard</button>
+      <button class="nav-btn" data-go="sa-dashboard">🏢 Super Admin</button>
+      <button class="nav-btn" data-go="rc-tv-queue">📺 Queue TV</button>
+      <button class="nav-btn" data-go="mob-dashboard">📱 Mobile view</button>
+      <button class="nav-btn" data-go="nm-communications">💬 Communications</button>
+      <button class="nav-btn" data-go="nm-audit">📜 Audit log</button>
+      <button class="nav-btn" data-go="dr-labs">🧪 Lab orders</button>
+      <button class="nav-btn" data-go="dr-prescription">💊 E-Prescription</button>
+      <button class="nav-btn" data-go="nm-billing">₹ Billing</button>
+      <button class="nav-btn" data-go="nm-pharmacy">⬡ Pharmacy</button>
+      <button class="nav-btn" data-go="nm-portal">👤 Patient Portal</button>
+      <div class="nav-label">Live app</div>
+      <a href="http://localhost:5173" target="_blank" class="nav-btn" style="text-decoration:none">↗ localhost:5173</a>
+    </aside>
+    <div class="main-col">
+      <div class="screen-header"><div class="breadcrumb" id="bc"></div><h2 id="title">Overview</h2><p id="meta">Premium interactive prototype</p></div>
+      <div class="preview-area"><div class="screen-stage" id="stage"></div></div>
+      <footer class="footer-nav">
+        <button class="btn btn-ghost" id="prevBtn">← Back</button>
+        <button class="btn btn-play" id="autoBtn">▶ Auto demo</button>
+        <button class="btn btn-ghost" id="resetBtn" title="Reset all demo actions">↺ Reset</button>
+        <div class="step-dots" id="dots"></div>
+        <button class="btn btn-primary" id="nextBtn">Next →</button>
+      </footer>
+    </div>
+    <aside class="panel-right" id="panel"><h3 style="font-size:13px;font-weight:800;margin-bottom:12px;font-family:var(--font-display)">Screen features</h3><div id="feats"></div><div class="gap-card" id="gap"></div></aside>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="sms-toast" id="smsToast">WhatsApp sent ✓</div>
+<div id="tourRoot"></div>
+<div id="modalRoot"></div>
+
+<script>
+const E2E = ['auth-login','rc-dashboard','rc-add-patient','rc-book-appt','rc-payment','rc-queue','dr-queue','dr-consult','dr-prescription','dr-followup','ca-analytics'];
+const C = { blue:'#2563eb', cyan:'#06b6d4', green:'#10b981', amber:'#f59e0b', red:'#ef4444', purple:'#8b5cf6', pink:'#ec4899' };
+
+/* ── Live demo state (persists across screens) ── */
+const DEMO_INIT = {
+  revenue: 18400, patients: 24, waiting: 6,
+  paymentMode: 'UPI', paid: false, booked: false, consultDone: false, receiptId: null,
+  selectedSlot: '10:30', selectedApptId: null, search: '',
+  vitals: { bp: 130, spo2: 98, temp: 98.4, weight: 72 },
+  patient: { name: '', phone: '', age: '', gender: 'Male' },
+  appointments: [
+    { id:1, patient:'Rajesh Kumar', doctor:'Dr. Patel', time:'10:30', status:'scheduled' },
+    { id:2, patient:'Priya Shah', doctor:'Dr. Sharma', time:'11:00', status:'waiting' },
+    { id:3, patient:'Amit Verma', doctor:'Dr. Patel', time:'11:30', status:'in-queue' },
+  ],
+  queue: [
+    { token:3, name:'Amit Verma', doctor:'Dr. Patel', wait:8, status:'waiting' },
+    { token:4, name:'Rajesh Kumar', doctor:'Dr. Patel', wait:12, status:'next' },
+    { token:5, name:'Sneha R.', doctor:'Dr. Sharma', wait:0, status:'in-consult' },
+    { token:6, name:'Vikram P.', doctor:'Dr. Patel', wait:3, status:'urgent' },
+  ],
+  rx: [
+    { id:1, name:'Amlodipine 5mg', dose:'1 tab OD', dur:'30 days', qty:30 },
+    { id:2, name:'Paracetamol 500mg', dose:'SOS', dur:'5 days', qty:10 },
+  ],
+  activity: [], notes: '',
+  coverPeriod: '7d', coverSelectedDay: null, coverPeakHour: null, coverApptFilter: null, billingChartSel: null,
+  invoiceFilter: 'all',
+  invoices: [
+    { id:'INV-1042', patient:'Rajesh K.', amount:500, gst:90, status:'paid' },
+    { id:'INV-1043', patient:'Priya S.', amount:750, gst:135, status:'partial' },
+    { id:'INV-1044', patient:'Amit V.', amount:500, gst:90, status:'pending' },
+  ],
+  pharmacyStock: [
+    { id:1, name:'Amlodipine', qty:120, min:20 },
+    { id:2, name:'Paracetamol', qty:8, min:25 },
+    { id:3, name:'Atorvastatin', qty:0, min:15 },
+    { id:4, name:'Metformin', qty:65, min:20 },
+  ],
+  portalBillPaid: false, portalBooked: false,
+};
+const S = JSON.parse(JSON.stringify(DEMO_INIT));
+function resetDemo() {
+  Object.assign(S, JSON.parse(JSON.stringify(DEMO_INIT)));
+  App.history = [];
+  App.current = 'cover';
+  App.render();
+  App.toast('Demo reset');
+}
+
+const HINTS = {
+  cover: 'Toggle 7d/30d · click chart segments · heatmap hours · Start Live Demo',
+  'auth-login': 'Click Sign In — simulates login with loading state',
+  'rc-dashboard': 'Click sidebar · search · rows · KPIs · quick actions',
+  'rc-add-patient': 'Fill the form — Save validates and adds to queue',
+  'rc-book-appt': 'Pick a time slot · toggle SMS · Confirm books appointment',
+  'rc-payment': 'Select payment mode · Mark Paid generates receipt',
+  'rc-queue': 'Sidebar nav works · Call Next on token #4 · click cards',
+  'dr-queue': 'Call Next starts consultation for first patient',
+  'dr-consult': 'Edit vitals · type notes · Save Notes',
+  'dr-prescription': 'Add/remove medicines · Print simulates PDF',
+  'dr-followup': 'Complete Consultation finishes the visit',
+  'ca-analytics': 'Charts reflect actions from earlier steps',
+  'nm-billing': 'Filter invoices · click row · Mark Paid · Create Invoice',
+  'nm-pharmacy': 'Dispense / Restock stock · Dispense All from Rx',
+  'nm-portal': 'Click each card — Book, Visits, Rx PDF, Pay Bill',
+  'auth-forgot': 'Reset link flow — backend Phase 2',
+  'sa-dashboard': 'Platform KPIs · manage clinics',
+  'sa-clinics': 'Create clinic · assign plans',
+  'nm-communications': 'Send WhatsApp/SMS · see delivery log',
+  'nm-labs': 'Order tests · upload results',
+  'nm-audit': 'Compliance trail · export CSV',
+  'rc-tv-queue': 'Fullscreen TV mode for waiting room',
+  'mob-dashboard': 'Mobile reception quick actions',
+  'dr-labs': 'Lab orders from consultation',
+};
+
+function now() { return new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', second:'2-digit' }); }
+function money(n) { return '₹' + n.toLocaleString('en-IN'); }
+function log(msg) {
+  S.activity.unshift({ t: now(), msg });
+  if (S.activity.length > 12) S.activity.pop();
+  App.toast(msg);
+  refreshActItems();
+}
+function hint() { return `<div class="hint-bar">Try it → <span>${HINTS[App.current] || 'Click buttons and cards'}</span></div>`; }
+function activityFeed() {
+  const items = S.activity.slice(0, 6).map(a => `<div class="act-item"><span class="act-time">${a.t}</span>${a.msg}</div>`).join('');
+  return `<div class="activity-feed"><div class="act-head"><span class="live-dot"></span> Live Activity</div><div id="actItems">${items || '<div class="act-empty">Interact with the screen — actions appear here in real time</div>'}</div></div>`;
+}
+function refreshActItems() {
+  const el = document.getElementById('actItems');
+  if (!el) return;
+  const items = S.activity.slice(0, 6).map(a => `<div class="act-item"><span class="act-time">${a.t}</span>${a.msg}</div>`).join('');
+  el.innerHTML = items || '<div class="act-empty">Interact with the screen — actions appear here in real time</div>';
+}
+function quickActions(btns) {
+  return `<div class="quick-actions">${btns.map(b => `<button type="button" class="qa-btn" data-action="${b.action}">${b.label}</button>`).join('')}</div>`;
+}
+function statusPill(st) {
+  const m = { scheduled:'pill-b', waiting:'pill-a', 'in-queue':'pill-g', 'in-consult':'pill-g', done:'pill-g', urgent:'pill-a' };
+  const l = { scheduled:'Scheduled', waiting:'Waiting', 'in-queue':'In Queue', 'in-consult':'In Consult', done:'Done', urgent:'URGENT' };
+  return `<span class="pill ${m[st]||'pill-b'}">${l[st]||st}</span>`;
+}
+function openModal(html) {
+  document.getElementById('modalRoot').innerHTML = `<div class="modal-bg" data-close="1"><div class="modal-box" onclick="event.stopPropagation()">${html}<button class="btn btn-ghost" style="margin-top:14px;width:100%;justify-content:center" data-close="1">Close</button></div></div>`;
+}
+function closeModal() { document.getElementById('modalRoot').innerHTML = ''; }
+
+/* ── Chart builders ── */
+const Charts = {
+  spark(vals, color, w=80, h=32) {
+    const max = Math.max(...vals), min = Math.min(...vals), range = max - min || 1;
+    const pts = vals.map((v,i) => `${(i/(vals.length-1))*w},${h - ((v-min)/range)*(h-4) - 2}`).join(' ');
+    const area = `0,${h} ${pts} ${w},${h}`;
+    return `<svg width="${w}" height="${h}" class="kpi-spark"><defs><linearGradient id="sg${color.replace('#','')}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity="0.3"/><stop offset="100%" stop-color="${color}" stop-opacity="0"/></linearGradient></defs><polygon points="${area}" fill="url(#sg${color.replace('#','')})"/><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+  },
+
+  donut(segments, totalLabel='Total') {
+    let grad = segments.map((s,i) => {
+      const start = segments.slice(0,i).reduce((a,x)=>a+x.pct,0);
+      return `${s.color} ${start}% ${start+s.pct}%`;
+    }).join(', ');
+    const sum = segments.reduce((a,s)=>a+s.val,0);
+    const legend = segments.map(s => `<div class="legend-item"><div class="legend-dot" style="background:${s.color}"></div>${s.label} · ${s.val}</div>`).join('');
+    return `<div class="donut-wrap"><div class="donut" style="background:conic-gradient(${grad})"><div class="donut-hole"><strong>${sum}</strong><span>${totalLabel}</span></div></div><div class="chart-legend" style="flex-direction:column;align-items:flex-start">${legend}</div></div>`;
+  },
+
+  bars(data, opts={}) {
+    const max = Math.max(...data.map(d=>d.val));
+    return `<div class="bar-chart">${data.map((d,i)=>`
+      <div class="bar-col">
+        <div class="bar-fill" style="height:${(d.val/max)*100}%;background:linear-gradient(180deg,${d.color||C.blue},${d.color2||C.cyan});animation-delay:${i*0.07}s"></div>
+        <div class="bar-label">${d.label}</div>
+      </div>`).join('')}</div>`;
+  },
+
+  hBars(data) {
+    const max = Math.max(...data.map(d=>d.val));
+    return data.map((d,i)=>`
+      <div class="h-bar-row">
+        <div class="h-bar-label">${d.label}</div>
+        <div class="h-bar-track"><div class="h-bar-fill" style="width:${(d.val/max)*100}%;background:linear-gradient(90deg,${d.color||C.blue},${d.color2||C.cyan});animation-delay:${i*0.08}s"></div></div>
+        <div class="h-bar-val">${d.display||d.val}</div>
+      </div>`).join('');
+  },
+
+  area(data, color=C.blue, w=300, h=100) {
+    const max = Math.max(...data), min = Math.min(...data)*0.85, range = max-min||1;
+    const pts = data.map((v,i) => `${(i/(data.length-1))*w},${h-4-((v-min)/range)*(h-12)}`);
+    const line = pts.join(' ');
+    const area = `0,${h} ${line} ${w},${h}`;
+    return `<div class="area-chart"><svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="height:${h}px"><defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity="0.35"/><stop offset="100%" stop-color="${color}" stop-opacity="0"/></linearGradient></defs><polygon points="${area}" fill="url(#ag)"/><polyline points="${line}" class="area-line" stroke="${color}"/></svg></div>`;
+  },
+
+  gauge(val, max, label, color=C.blue, size=80) {
+    const pct = val/max, r=30, circ=2*Math.PI*r, offset=circ*(1-pct);
+    return `<div class="gauge"><svg width="${size}" height="${size/2+10}" viewBox="0 0 80 50"><path d="M 10 45 A 30 30 0 0 1 70 45" fill="none" stroke="var(--border)" stroke-width="6" stroke-linecap="round"/><path d="M 10 45 A 30 30 0 0 1 70 45" fill="none" stroke="${color}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${circ/2}" stroke-dashoffset="${circ/2*(1-pct)}" style="transition:stroke-dashoffset 1s ease"/><text x="40" y="42" text-anchor="middle" font-size="13" font-weight="800" fill="var(--text)" font-family="Plus Jakarta Sans">${val}</text></svg><div class="gauge-label">${label}</div></div>`;
+  },
+
+  heatmap(hours) {
+    const max = Math.max(...hours);
+    return `<div class="heatmap">${hours.map((v,i)=>{
+      const intensity = v/max;
+      const col = intensity>0.8?C.blue:intensity>0.5?'#3b82f6':intensity>0.3?'#93c5fd':'#dbeafe';
+      return `<div class="hm-cell" style="background:${col};animation-delay:${i*0.03}s" title="${i+8}:00 — ${v} patients"></div>`;
+    }).join('')}</div><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-muted);margin-top:6px"><span>8 AM</span><span>12 PM</span><span>8 PM</span></div>`;
+  },
+
+  pieSvg(segments, size=140) {
+    let total = segments.reduce((a,s)=>a+s.val,0), angle=0, paths='';
+    segments.forEach(s => {
+      const a1 = angle, a2 = angle + (s.val/total)*360; angle = a2;
+      const r=size/2-4, cx=size/2, cy=size/2;
+      const x1=cx+r*Math.cos((a1-90)*Math.PI/180), y1=cy+r*Math.sin((a1-90)*Math.PI/180);
+      const x2=cx+r*Math.cos((a2-90)*Math.PI/180), y2=cy+r*Math.sin((a2-90)*Math.PI/180);
+      const large = a2-a1>180?1:0;
+      paths+=`<path d="M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} Z" fill="${s.color}" opacity="0.9"><title>${s.label}: ${s.val}</title></path>`;
+    });
+    return `<svg width="${size}" height="${size}" style="animation:donutSpin 0.8s ease">${paths}<circle cx="${size/2}" cy="${size/2}" r="${size/5}" fill="var(--bg-elevated)"/></svg>`;
+  },
+
+  interactiveArea(data, color, w, h, labels) {
+    const onCover=App.current==='cover';
+    const max = Math.max(...data), min = Math.min(...data)*0.85, range = max-min||1;
+    const pts = data.map((v,i) => `${(i/(data.length-1))*w},${h-4-((v-min)/range)*(h-12)}`);
+    const line = pts.join(' ');
+    const area = `0,${h} ${line} ${w},${h}`;
+    const dots = data.map((v,i)=>{
+      const x=(i/(data.length-1))*w, y=h-4-((v-min)/range)*(h-12);
+      const lbl=labels?.[i]||`Day ${i+1}`;
+      return `<circle class="area-dot ${onCover&&S.coverSelectedDay===i?'sel':''}" cx="${x}" cy="${y}" r="5" data-rev-day="${i}" data-rev-val="${v}" data-rev-lbl="${lbl}"/>`;
+    }).join('');
+    return `<div class="area-interactive chart-card-body"><svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="height:${h}px;width:100%"><defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity="0.35"/><stop offset="100%" stop-color="${color}" stop-opacity="0"/></linearGradient></defs><polygon points="${area}" fill="url(#ag)"/><polyline points="${line}" class="area-line" stroke="${color}"/>${dots}</svg></div>`;
+  },
+
+  interactiveDonut(segments, totalLabel, chartCtx) {
+    const selKey=chartCtx==='billing'?S.billingChartSel:(App.current==='cover'?S.coverApptFilter:null);
+    let grad = segments.map((s,i) => {
+      const start = segments.slice(0,i).reduce((a,x)=>a+x.pct,0);
+      return `${s.color} ${start}% ${start+s.pct}%`;
+    }).join(', ');
+    const sum = segments.reduce((a,s)=>a+s.val,0);
+    const legend = segments.map(s => `<button type="button" class="legend-btn ${selKey===s.label?'sel':''}" data-segment="${s.label}" ${chartCtx?`data-chart-ctx="${chartCtx}"`:''}><div class="legend-dot" style="background:${s.color}"></div>${s.label} · ${s.val}</button>`).join('');
+    return `<div class="donut-wrap"><div class="donut" style="background:conic-gradient(${grad})"><div class="donut-hole"><strong>${sum}</strong><span>${totalLabel}</span></div></div><div class="chart-legend" style="flex-direction:column;align-items:stretch">${legend}</div></div>`;
+  },
+
+  interactiveHeatmap(hours) {
+    const onCover=App.current==='cover';
+    const max = Math.max(...hours);
+    const labels = ['8 AM','9 AM','10 AM','11 AM','12 PM','1 PM','2 PM','3 PM','4 PM','5 PM','6 PM','7 PM'];
+    return `<div class="heatmap">${hours.map((v,i)=>{
+      const intensity = v/max;
+      const col = intensity>0.8?C.blue:intensity>0.5?'#3b82f6':intensity>0.3?'#93c5fd':'#dbeafe';
+      return `<div class="hm-cell ${onCover&&S.coverPeakHour===i?'sel':''}" data-hm="${i}" data-hm-val="${v}" data-hm-lbl="${labels[i]}" style="background:${col};animation-delay:${i*0.03}s" title="${labels[i]} — ${v} patients"></div>`;
+    }).join('')}</div><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-muted);margin-top:6px"><span>8 AM</span><span>12 PM</span><span>8 PM</span></div>`;
+  },
+
+  interactiveBars(data, prefix='bar') {
+    const onCover=App.current==='cover';
+    const max = Math.max(...data.map(d=>d.val));
+    return `<div class="bar-chart">${data.map((d,i)=>`
+      <div class="bar-col">
+        <div class="bar-fill click-bar ${onCover&&S.coverSelectedDay===i?'sel':''}" data-${prefix}="${i}" data-${prefix}-val="${d.val}" data-${prefix}-lbl="${d.label}" style="height:${(d.val/max)*100}%;background:linear-gradient(180deg,${d.color||C.blue},${d.color2||C.cyan});animation-delay:${i*0.07}s"></div>
+        <div class="bar-label">${d.label}</div>
+      </div>`).join('')}</div>`;
+  },
+
+  interactiveHBar(data, prefix='doc') {
+    const onCover=App.current==='cover';
+    const max = Math.max(...data.map(d=>d.val));
+    return data.map((d,i)=>`
+      <div class="h-bar-row click-doc ${onCover&&S.coverDoctor===d.label?'sel':''}" data-${prefix}="${d.label}" data-${prefix}-val="${d.val}">
+        <div class="h-bar-label">${d.label}</div>
+        <div class="h-bar-track"><div class="h-bar-fill" style="width:${(d.val/max)*100}%;background:linear-gradient(90deg,${d.color||C.blue},${d.color2||C.cyan});animation-delay:${i*0.08}s"></div></div>
+        <div class="h-bar-val">${d.display||d.val}</div>
+      </div>`).join('');
+  }
+};
+
+function tbl(h, rows, clickable=false) {
+  return `<table><thead><tr>${h.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${rows.map((r,i)=>`<tr class="${clickable?'click-row':''}" ${clickable?`data-row="${i}"`:''}>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+}
+
+function apptMix() {
+  return {
+    completed: 48 + (S.consultDone ? 1 : 0),
+    waiting: Math.max(0, 22 + S.waiting - 6),
+    scheduled: 18 + Math.max(0, S.appointments.length - 3),
+    cancelled: 12,
+  };
+}
+function apptMixSegments() {
+  const m = apptMix();
+  const total = m.completed + m.waiting + m.scheduled + m.cancelled;
+  const pct = v => Math.round((v/total)*100);
+  return [
+    { label:'Completed', val:m.completed, pct:pct(m.completed), color:C.green },
+    { label:'Waiting', val:m.waiting, pct:pct(m.waiting), color:C.amber },
+    { label:'Scheduled', val:m.scheduled, pct:pct(m.scheduled), color:C.blue },
+    { label:'Cancelled', val:m.cancelled, pct:pct(m.cancelled), color:C.red },
+  ];
+}
+function coverRevenueData() {
+  if (S.coverPeriod === '30d') return {
+    data:[120,180,150,220,190,280,260,320,290,380,350,420],
+    labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+  };
+  const last = Math.round(S.revenue/60) + (S.paid ? 12 : 0);
+  return {
+    data:[180,220,190,280,260,320,last],
+    labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+  };
+}
+function coverPeakHours() {
+  const base = [2,4,8,12,18,22,20,16,14,10,8,6];
+  if (S.waiting > 6) base[4] = Math.min(24, base[4] + (S.waiting - 6));
+  if (S.coverPeakHour !== null) base[S.coverPeakHour] = Math.min(24, base[S.coverPeakHour] + 2);
+  return base;
+}
+function coverChartDetail() {
+  if (S.coverSelectedDay !== null) {
+    const { data, labels } = coverRevenueData();
+    return `<strong>${labels[S.coverSelectedDay]}</strong> — Revenue ${money(data[S.coverSelectedDay]*100)} · Click another point or simulate payment`;
+  }
+  if (S.coverPeakHour !== null) {
+    const hrs = coverPeakHours();
+    const lbl = ['8 AM','9 AM','10 AM','11 AM','12 PM','1 PM','2 PM','3 PM','4 PM','5 PM','6 PM','7 PM'][S.coverPeakHour];
+    return `<strong>${lbl}</strong> — ${hrs[S.coverPeakHour]} patients in queue · <span style="color:var(--primary);cursor:pointer" data-action="go-queue">Open Queue →</span>`;
+  }
+  if (S.coverApptFilter) return `<strong>${S.coverApptFilter}</strong> selected · Click legend again to navigate or deselect`;
+  if (S.coverDoctor) return `<strong>${S.coverDoctor}</strong> · <span style="color:var(--primary);cursor:pointer" data-action="go-dr-queue">Open Doctor Queue →</span>`;
+  return 'Click any chart — revenue points, appointment segments, peak hours, or doctor bars';
+}
+
+function kpis(items, clickable=false) {
+  const icons = ['👥','₹','⏳','📅','🔔'];
+  const colors = [C.blue, C.green, C.amber, C.purple, C.cyan];
+  return `<div class="kpis">${items.map(([l,v,t],i)=>`
+    <div class="kpi ${clickable?'clickable':''}" style="animation-delay:${i*0.07}s" ${clickable?`data-kpi="${l}"`:''}>
+      <div class="kpi-icon" style="background:${colors[i%5]}18;color:${colors[i%5]}">${icons[i%5]}</div>
+      <label>${l}</label><div class="val" id="kpi-${i}">${v}</div>${t?`<div class="trend up">${t}</div>`:''}
+      ${Charts.spark([3,5,4,7,6,8,9,7,10,12], colors[i%5])}
+    </div>`).join('')}</div>`;
+}
+
+const NAV_ITEMS = {
+  reception: ['Dashboard','Patients','Appointments','Payments','Queue'],
+  doctor: ['Dashboard','Queue','Consultation','E-Rx','Follow-ups'],
+  admin: ['Overview','Analytics','Users','Settings'],
+  billing: ['Overview','Billing','Analytics'],
+  pharmacy: ['Overview','Pharmacy','Inventory'],
+};
+const NAV_META = {
+  'rc-dashboard': { active:'Dashboard', ctx:'reception' },
+  'rc-add-patient': { active:'Patients', ctx:'reception' },
+  'rc-book-appt': { active:'Appointments', ctx:'reception' },
+  'rc-payment': { active:'Payments', ctx:'reception' },
+  'rc-queue': { active:'Queue', ctx:'reception' },
+  'dr-queue': { active:'Queue', ctx:'doctor' },
+  'dr-consult': { active:'Consultation', ctx:'doctor' },
+  'dr-prescription': { active:'E-Rx', ctx:'doctor' },
+  'ca-analytics': { active:'Analytics', ctx:'admin' },
+  'nm-billing': { active:'Billing', ctx:'billing' },
+  'nm-pharmacy': { active:'Pharmacy', ctx:'pharmacy' },
+};
+
+function shellContent(content, qa=[]) {
+  const meta = NAV_META[App.current] || { active:'Dashboard', ctx:'reception' };
+  return shell(meta.active, NAV_ITEMS[meta.ctx], content, qa, meta.ctx);
+}
+
+function shell(activeLabel, nav, content, qa=[], ctx='reception') {
+  const routes={
+    reception:{Dashboard:'rc-dashboard',Patients:'rc-add-patient',Appointments:'rc-book-appt',Payments:'rc-payment',Queue:'rc-queue'},
+    doctor:{Dashboard:'dr-queue',Queue:'dr-queue',Consultation:'dr-consult','E-Rx':'dr-prescription','Follow-ups':'dr-followup'},
+    admin:{Overview:'ca-analytics',Analytics:'ca-analytics',Users:'ca-analytics',Settings:'ca-analytics'},
+    billing:{Overview:'ca-analytics',Billing:'nm-billing',Analytics:'ca-analytics'},
+    pharmacy:{Overview:'ca-analytics',Pharmacy:'nm-pharmacy',Inventory:'nm-pharmacy'},
+  };
+  const map=routes[ctx]||routes.reception;
+  const home={reception:'rc-dashboard',doctor:'dr-queue',admin:'ca-analytics',billing:'nm-billing',pharmacy:'nm-pharmacy'}[ctx]||'rc-dashboard';
+  return `<div class="device-frame"><div class="device-bar"><span class="dd r"></span><span class="dd y"></span><span class="dd g"></span><span class="durl">localhost:5173/${activeLabel.toLowerCase().replace(/ /g,'-')} · <span class="clock-live" id="liveClock">${now()}</span></span></div>
+    <div class="mock-app"><div class="mock-side"><button type="button" class="mock-brand" data-mnav="${home}">⚕ Demo Clinic</button>${nav.map(n=>{
+      const id=map[n]||'';
+      return `<button type="button" class="mnav ${n===activeLabel?'on':''}" data-mnav="${id}" ${id?'':'disabled'}>${n}</button>`;
+    }).join('')}</div>
+    <div class="mock-main">${hint()}${qa.length?quickActions(qa):''}${content}${activityFeed()}</div></div></div>`;
+}
+
+const SCREENS = {
+  cover: {
+    title:'Product Vision Dashboard', meta:'Live charts · click everything · syncs with demo flow', role:'Overview', status:'new',
+    features:[{t:'Revenue chart — click days, toggle 7d/30d period',n:true},{t:'Appointment donut — click segment → jump to screen',n:true},{t:'Heatmap — click hour → queue board',n:true},{t:'Simulate payment updates all charts live',n:true}],
+    gap:'Complete product vision. Charts now interactive — not static mockups.',
+    render:()=>{
+      const { data:revData, labels:revLabels } = coverRevenueData();
+      const mix = apptMixSegments();
+      const peaks = coverPeakHours();
+      const docData = [
+        {label:'Dr. Patel',val:93+(S.consultDone?8:0)+(S.paid?5:0),display:money(93000+(S.revenue-18400)),color:C.blue,color2:C.cyan},
+        {label:'Dr. Sharma',val:71,display:'₹71k',color:C.green,color2:'#34d399'},
+        {label:'Dr. Gupta',val:58,display:'₹58k',color:C.purple,color2:C.pink},
+      ];
+      return `
+      ${hint()}
+      <div class="cover-toolbar">
+        <button type="button" class="period-btn ${S.coverPeriod==='7d'?'on':''}" data-period="7d">7 Days</button>
+        <button type="button" class="period-btn ${S.coverPeriod==='30d'?'on':''}" data-period="30d">30 Days</button>
+        <button type="button" class="btn btn-primary" id="startDemoBtn">▶ Start Live Demo</button>
+        <button type="button" class="btn btn-ghost" data-action="simulate-payment">+ Simulate ₹500 Payment</button>
+      </div>
+      ${kpis([['Live Revenue',money(S.revenue),S.paid?'↑ ₹500 today':'↑ 8%'],['Patients Today',String(S.patients),'↑ 12%'],['In Queue',String(S.waiting),'live'],['Consults Done',String(S.consultDone?13:12),S.consultDone?'✓':'']],true)}
+      <div class="hero-banner">
+        <h2>Doctor CRM — Full Platform Vision</h2>
+        <p>Multi-tenant clinic SaaS — charts below are <strong style="opacity:1">live</strong>. Click them, run the demo flow, watch numbers update.</p>
+        <div class="hero-live">
+          <div><strong>${money(S.revenue)}</strong><span>Revenue today</span></div>
+          <div><strong>${S.appointments.length}</strong><span>Active appointments</span></div>
+          <div><strong>${S.rx.length}</strong><span>Rx issued</span></div>
+          <div><strong>${S.invoices.filter(i=>i.status==='paid').length}/${S.invoices.length}</strong><span>Invoices paid</span></div>
+        </div>
+        <div class="hero-actions">
+          <button type="button" class="btn btn-ghost" style="background:rgba(255,255,255,0.15);color:#fff;border:none" data-action="go-add-patient">+ Add Patient</button>
+          <button type="button" class="btn btn-ghost" style="background:rgba(255,255,255,0.15);color:#fff;border:none" data-action="go-queue">View Queue</button>
+        </div>
+        <svg class="orbs" width="120" height="120" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2"/><circle cx="60" cy="60" r="35" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/><circle cx="60" cy="60" r="8" fill="rgba(255,255,255,0.3)"/></svg>
+      </div>
+      <div class="chart-detail" id="chartDetail">${coverChartDetail()}</div>
+      <div class="grid2">
+        <div class="card interactive"><div class="card-head">Revenue Trend <span class="pill pill-b">${S.coverPeriod}</span></div><div class="card-body">${Charts.interactiveArea(revData,C.blue,340,110,revLabels)}</div></div>
+        <div class="card interactive"><div class="card-head">Appointment Mix</div><div class="card-body">${Charts.interactiveDonut(mix,'Today')}</div></div>
+        <div class="card interactive"><div class="card-head">Peak Hours Heatmap</div><div class="card-body">${Charts.interactiveHeatmap(peaks)}</div></div>
+        <div class="card interactive"><div class="card-head">Doctor Revenue Share</div><div class="card-body"><div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap">${Charts.pieSvg([{label:'Dr. Patel',val:docData[0].val,color:C.blue},{label:'Dr. Sharma',val:31,color:C.cyan},{label:'Dr. Gupta',val:27,color:C.purple}],120)}<div style="flex:1;min-width:140px">${Charts.interactiveHBar(docData,'doc')}</div></div></div></div>
+      </div>
+      <div class="module-grid" style="margin-top:16px">
+        ${[['👥','Reception','rc-dashboard','Patients · Queue · Pay'],['✚','Doctor','dr-queue','Consult · Rx · Labs'],['📊','Admin','ca-analytics','Analytics · Audit'],['💊','Pharmacy','nm-pharmacy','Stock · Dispense NEW'],['📱','Portal','nm-portal','Self-book NEW'],['💬','Billing','nm-billing','Invoices NEW']].map(m=>`
+          <div class="module-card" data-go-screen="${m[2]}"><div class="icon">${m[0]}</div><strong>${m[1]}</strong><span>${m[3]}</span></div>`).join('')}
+      </div>
+      ${activityFeed()}`
+    }
+  },
+  'auth-login': {
+    title:'Login', meta:'/login · All roles', role:'Auth', status:'mvp', step:1,
+    features:[{t:'Secure JWT + refresh cookie auth',n:false},{t:'Role-based dashboard redirect',n:false},{t:'Forgot password flow',n:true},{t:'Animated brand panel with live stats',n:true}],
+    gap:'Login works in live app.',
+    render:()=>`<div class="device-frame"><div class="device-bar"><span class="dd r"></span><span class="dd y"></span><span class="dd g"></span><span class="durl">localhost:5173/login</span></div>
+      ${hint()}
+      <div class="login-scene"><div class="login-left"><h2>Healthcare ops,<br/>beautifully simple.</h2><p>Appointments, consultations, prescriptions, billing & analytics — one platform for your entire clinic.</p>
+        <div class="login-stats"><div class="login-stat"><strong>500+</strong><span>Clinics</span></div><div class="login-stat"><strong>2M+</strong><span>Patients</span></div><div class="login-stat"><strong>99.9%</strong><span>Uptime</span></div></div></div>
+        <div class="login-right"><div class="login-form"><h3>Welcome back</h3>
+          <div style="margin-bottom:14px"><div class="field-label">Email</div><input class="field" value="reception@democlinic.com" readonly/></div>
+          <div style="margin-bottom:14px"><div class="field-label">Password</div><input class="field" type="password" value="••••••••" readonly/></div>
+          <button class="btn btn-primary" id="loginBtn" style="width:100%;justify-content:center">Sign In →</button>
+          <p style="font-size:11px;color:var(--primary);text-align:center;margin-top:14px">Forgot password? <span class="badge badge-new">NEW</span></p>
+        </div></div></div></div>${activityFeed()}`
+  },
+  'rc-dashboard': {
+    title:'Reception Dashboard', meta:'/reception/dashboard · LIVE', role:'Reception', status:'mvp', step:2,
+    features:[{t:'Search filters appointments in real time',n:false},{t:'Click row → patient detail modal',n:false},{t:'Quick actions: Add Patient, Book, Collect Pay',n:true},{t:'KPIs update when you complete actions',n:true}],
+    gap:'Dashboard live in app. Interactive enhancements for demo.',
+    render:()=>{
+      const filtered = S.appointments.filter(a => !S.search || a.patient.toLowerCase().includes(S.search.toLowerCase()));
+      return shellContent(`
+      ${kpis([["Today's Patients",String(S.patients),'↑ 12%'],["Revenue",money(S.revenue),'↑ 8%'],["Waiting",String(S.waiting),''],['Appts',String(S.appointments.length),''],['Follow-ups','3','']], true)}
+      <div class="search-box"><span>🔍</span><input id="apptSearch" placeholder="Search patient name..." value="${S.search}"/></div>
+      <div class="grid2">
+        <div class="card interactive"><div class="card-head">Hourly Traffic <span class="pill pill-b">Live</span></div><div class="card-body">${Charts.interactiveBars([{label:'9',val:4+Math.min(S.waiting,3)},{label:'10',val:9},{label:'11',val:14},{label:'12',val:7},{label:'1',val:11},{label:'2',val:8},{label:'3',val:5}],'traffic')}</div></div>
+        <div class="card interactive"><div class="card-head">Status Breakdown</div><div class="card-body">${Charts.interactiveDonut([{label:'Done',val:12+(S.consultDone?1:0),pct:50,color:C.green},{label:'Waiting',val:S.waiting,pct:25,color:C.amber},{label:'Scheduled',val:S.appointments.length,pct:17,color:C.blue},{label:'Cancel',val:2,pct:8,color:C.red}],'Today')}</div></div>
+      </div>
+      <div class="card" style="margin-top:14px"><div class="card-head">Today's Appointments <span style="font-size:10px;color:var(--text-muted)">${filtered.length} shown</span></div><div class="card-body" style="padding:0"><table><thead><tr>${['Patient','Doctor','Time','Status'].map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${filtered.map(a=>`<tr class="click-row ${S.selectedApptId===a.id?'selected':''}" data-appt="${a.id}"><td><strong>${a.patient}</strong></td><td>${a.doctor}</td><td>${a.time}</td><td>${statusPill(a.status)}</td></tr>`).join('')}</tbody></table></div></div>`,
+      [{label:'+ Add Patient',action:'go-add-patient'},{label:'+ Book Appointment',action:'go-book'},{label:'Collect Payment',action:'go-payment'}]);
+    }
+  },
+  'rc-add-patient': {
+    title:'Add Patient', meta:'Modal · /reception/patients', role:'Reception', status:'mvp', step:3,
+    features:[{t:'Form validates name + phone before save',n:false},{t:'Save adds patient to appointments list',n:true},{t:'Error states on empty fields',n:true},{t:'Success → auto-updates patient count KPI',n:true}],
+    gap:'Basic CRUD exists. Validation UX enhanced for demo.',
+    render:()=>shellContent(`
+      <div class="card" style="max-width:520px;margin:0 auto">
+        <div class="card-head">New Patient <span class="badge badge-new">Interactive</span></div>
+        <div class="card-body" id="patientForm">
+          <div style="margin-bottom:12px"><div class="field-label">Full Name *</div><input class="field-live" id="pName" placeholder="e.g. Rajesh Kumar" value="${S.patient.name}"/><div class="field-err" id="errName">Name is required</div></div>
+          <div style="margin-bottom:12px"><div class="field-label">Phone *</div><input class="field-live" id="pPhone" placeholder="+91 98765 43210" value="${S.patient.phone}"/><div class="field-err" id="errPhone">Valid 10-digit phone required</div></div>
+          <div class="grid2" style="gap:10px">
+            <div><div class="field-label">Age</div><input class="field-live" id="pAge" placeholder="45" value="${S.patient.age}"/></div>
+            <div><div class="field-label">Gender</div><select class="field-live" id="pGender"><option ${S.patient.gender==='Male'?'selected':''}>Male</option><option ${S.patient.gender==='Female'?'selected':''}>Female</option></select></div>
+          </div>
+          <div style="margin-top:16px;display:flex;gap:10px">
+            <button class="btn btn-ghost" data-action="clear-form">Clear</button>
+            <button class="btn btn-primary" id="savePatientBtn">Save Patient →</button>
+          </div>
+        </div>
+      </div>`, [])
+  },
+  'rc-book-appt': {
+    title:'Book Appointment', meta:'Modal · /reception/appointments', role:'Reception', status:'mvp', step:4,
+    features:[{t:'Click slots to pick time — full slots blocked',n:false},{t:'SMS toggle actually toggles',n:true},{t:'Confirm adds to appointments + queue',n:true},{t:'Fee auto-calculated ₹500',n:false}],
+    gap:'Booking works in app. Slot picker interactive for demo.',
+    render:()=>{
+      const slots = ['9:00','9:30','10:00','10:30','11:00','11:30'];
+      const full = ['10:30'];
+      const patient = S.patient.name || 'Rajesh Kumar';
+      return shellContent(`
+      <div class="grid2">
+        <div class="card"><div class="card-head">Book Appointment ${S.booked?'<span class="pill pill-g">Booked ✓</span>':'<span class="pill pill-a">SMS NEW</span>'}</div>
+        <div class="card-body" style="font-size:13px">
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-muted)">Patient</span><strong>${patient}</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-muted)">Doctor</span><strong>Dr. Patel</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-muted)">Selected Slot</span><strong id="slotDisplay">${S.selectedSlot}</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0"><span style="color:var(--text-muted)">Fee</span><strong style="color:var(--primary);font-size:18px">₹500</strong></div>
+          <div class="field-label" style="margin-top:14px">Pick a slot</div>
+          <div class="slot-grid">${slots.map(s=>`<button type="button" class="slot-btn ${full.includes(s)?'full':''} ${S.selectedSlot===s?'picked':''}" data-slot="${s}" ${full.includes(s)?'disabled':''}>${s}${full.includes(s)?'<br><small>FULL</small>':''}</button>`).join('')}</div>
+          <label style="display:flex;align-items:center;gap:8px;margin:16px 0;font-size:12px;cursor:pointer"><input type="checkbox" id="smsToggle" checked/> Send SMS reminder</label>
+          ${S.booked ? `<div class="success-box"><div class="check">✓</div><strong>Appointment confirmed!</strong><p style="font-size:12px;color:var(--text-muted);margin-top:6px">Token #${S.queue.find(q=>q.status==='next')?.token||4} · SMS sent</p></div>` :
+          `<button type="button" class="btn btn-primary" id="confirmBookBtn" style="width:100%;justify-content:center">Confirm Booking →</button>`}
+        </div></div>
+        <div class="card"><div class="card-head">Dr. Patel — Availability</div><div class="card-body">${Charts.bars(slots.map(s=>({label:s.split(':')[0],val:full.includes(s)?10:s==='11:00'?6:3,color:full.includes(s)?C.red:C.green,color2:full.includes(s)?'#f87171':'#34d399'})))}</div></div>
+      </div>`, [{label:'→ Collect Payment',action:'go-payment'}]);
+    }
+  },
+  'rc-payment': {
+    title:'Collect Payment', meta:'/reception/payments', role:'Reception', status:'mvp', step:5,
+    features:[{t:'Payment mode buttons switch selection',n:false},{t:'Mark Paid → receipt + revenue +₹500',n:true},{t:'Charts update after payment',n:true},{t:'Invoice PDF button (NEW)',n:true}],
+    gap:'Payment collection exists. Full receipt flow is demo enhancement.',
+    render:()=>shellContent(`
+      <div class="grid2">
+        <div class="card"><div class="card-head">Collect Fee ${S.paid?'<span class="pill pill-g">PAID</span>':''}</div><div class="card-body">
+          ${S.paid ? `<div class="success-box"><div class="check">✓</div><strong>Payment received!</strong><p style="font-size:12px;margin-top:8px">${money(500)} via ${S.paymentMode}</p><p style="font-size:11px;color:var(--text-muted);margin-top:4px">Receipt #RCP-${S.receiptId||'------'}</p><button class="btn btn-ghost" style="margin-top:12px" data-action="go-queue">→ View Queue</button></div>` : `
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+            <div style="width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,${C.blue},${C.cyan});display:grid;place-items:center;color:#fff;font-weight:800">RK</div>
+            <div><strong>Rajesh Kumar</strong><br><span style="font-size:11px;color:var(--text-muted)">Dr. Patel · Token #4</span></div>
+            <div style="margin-left:auto;font-family:var(--font-display);font-size:28px;font-weight:800;color:var(--primary)">₹500</div>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:16px">${['Cash','UPI','Card'].map(m=>`<button class="btn btn-ghost pay-btn ${S.paymentMode===m?'active':''}" data-pay="${m}">${m}</button>`).join('')}</div>
+          <button class="btn btn-primary" id="markPaidBtn">Mark Paid →</button>
+          <button class="btn btn-ghost" style="margin-left:8px">Invoice PDF <span class="badge badge-new">NEW</span></button>`}
+        </div></div>
+        <div class="card"><div class="card-head">Today's Collection</div><div class="card-body">${Charts.bars([{label:'Cash',val:S.paymentMode==='Cash'?10:8,color:C.green,color2:'#34d399'},{label:'UPI',val:S.paymentMode==='UPI'?16:14,color:C.blue,color2:C.cyan},{label:'Card',val:5,color:C.purple,color2:C.pink}])}</div></div>
+      </div>`, [])
+  },
+  'rc-queue': {
+    title:'Queue Board', meta:'/reception/queue · timers live', role:'Reception', status:'mvp', step:6,
+    features:[{t:'Wait times tick every second',n:true},{t:'Call Next moves patient to consult',n:false},{t:'Click token card to select',n:true},{t:'Queue donut updates on call',n:true}],
+    gap:'Queue built in app. Live timers are demo enhancement.',
+    render:()=>{
+      const waiting = S.queue.filter(q=>q.status==='waiting'||q.status==='next'||q.status==='urgent').length;
+      return shellContent(`
+      <span class="badge badge-new" style="margin-bottom:14px;display:inline-block">TV Mode — click Call Next on active token</span>
+      <div class="queue-cards" id="queueCards">${S.queue.map(q=>`
+        <div class="qcard ${q.status==='next'?'active':''} ${q.status==='called'?'called':''}" data-token="${q.token}" style="${q.status==='urgent'?'border-color:var(--warning)':''}">
+          <div class="token" style="${q.status==='urgent'?'color:var(--warning)':''}">#${q.token}</div>
+          <div class="name">${q.name}</div>
+          <div class="wait" data-queue-wait="${q.token}">${q.doctor} · ${q.status==='in-consult'?'In consult':q.status==='called'?'Called ✓':q.wait+'m wait'}${q.status==='urgent'?' · URGENT':''}</div>
+          ${q.status==='next'?'<button type="button" class="call-btn" data-call="'+q.token+'">Call Next →</button>':''}
+        </div>`).join('')}</div>
+      <div class="grid2" style="margin-top:16px">
+        <div class="card"><div class="card-head">Queue Status</div><div class="card-body">${Charts.donut([{label:'Waiting',val:waiting,pct:50,color:C.amber},{label:'In Consult',val:2,pct:30,color:C.blue},{label:'Done',val:2,pct:20,color:C.green}])}</div></div>
+        <div class="card"><div class="card-head">Avg Wait</div><div class="card-body">${Charts.hBars([{label:'Dr. Patel',val:12,display:'12m',color:C.blue,color2:C.cyan},{label:'Dr. Sharma',val:8,display:'8m',color:C.green,color2:'#34d399'}])}</div></div>
+      </div>`, [])
+    }
+  },
+  'dr-queue': {
+    title:'Doctor Queue', meta:'/doctor/queue', role:'Doctor', status:'mvp', step:7,
+    features:[{t:'Call Next opens consultation',n:false},{t:'Syncs with reception queue state',n:true},{t:'Progress gauges update live',n:true}],
+    gap:'Fully implemented in live app.',
+    render:()=>{
+      const next = S.queue.find(q=>q.status==='next');
+      return shellContent(`
+      <div class="grid2">
+        <div class="card"><div class="card-head">My Queue <span class="pill pill-a">${S.queue.filter(q=>q.status==='waiting'||q.status==='next').length} waiting</span></div>
+        <div class="card-body" style="padding:0"><table><thead><tr>${['#','Patient','Wait','Action'].map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>
+          ${next?`<tr><td>1</td><td><strong>${next.name}</strong></td><td data-dr-queue-wait>${next.wait}m</td><td><button class="btn btn-primary" id="drCallBtn" style="padding:5px 12px;font-size:11px">Call Next →</button></td></tr>`:'<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px">No patients — call from reception queue first</td></tr>'}
+        </tbody></table></div></div>
+        <div class="card"><div class="card-head">Progress</div><div class="card-body"><div class="gauge-row">${Charts.gauge(S.consultDone?13:12,18,'Done',C.green)}${Charts.gauge(S.waiting,8,'Waiting',C.amber)}</div></div></div>
+      </div>`, [])
+    }
+  },
+  'dr-consult': {
+    title:'Consultation', meta:'/doctor/consultations/:id', role:'Doctor', status:'mvp', step:8,
+    features:[{t:'Edit vitals — updates gauges live',n:true},{t:'Type + save clinical notes',n:false},{t:'Snapshot pulls patient data from flow',n:true}],
+    gap:'Core consult built. Interactive vitals for demo.',
+    render:()=>shellContent(`
+      <div class="card" style="margin-bottom:14px;background:linear-gradient(135deg,rgba(37,99,235,0.06),rgba(6,182,212,0.04));border-color:rgba(37,99,235,0.2)">
+        <div class="card-head">Snapshot — ${S.patient.name||'Rajesh Kumar'}</div>
+        <div class="card-body"><div class="gauge-row">${Charts.gauge(12,20,'Visits',C.blue)}${Charts.gauge(S.vitals.bp,180,'BP',C.amber)}${Charts.gauge(S.vitals.spo2,100,'SpO2',C.green)}${Charts.gauge(S.vitals.weight,100,'Kg',C.purple)}</div></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><div class="card-head">Vitals <span class="badge badge-new">Edit</span></div><div class="card-body" style="font-size:12px">BP <input class="vitals-input" id="vBp" value="${S.vitals.bp}"/> SpO2 <input class="vitals-input" id="vSpo2" value="${S.vitals.spo2}"/> Weight <input class="vitals-input" id="vWeight" value="${S.vitals.weight}"/><button class="btn btn-ghost" id="saveVitalsBtn" style="margin-top:10px;width:100%;justify-content:center">Record Vitals</button></div></div>
+        <div class="card"><div class="card-head">Notes</div><div class="card-body"><textarea class="field-live" id="clinicalNotes" rows="3" placeholder="Symptoms, diagnosis...">${S.notes}</textarea><button class="btn btn-primary" id="saveNotesBtn" style="margin-top:8px">Save Notes</button></div></div>
+      </div>
+      <button type="button" class="btn btn-primary" data-action="go-rx" style="margin-top:12px">Add Prescription →</button>`, [])
+  },
+  'dr-prescription': {
+    title:'E-Prescription', meta:'NEW · /consultations/:id/rx', role:'Doctor', status:'new', step:9,
+    features:[{t:'Add / delete medicines dynamically',n:true},{t:'Print PDF simulates download',n:true},{t:'Send to patient portal',n:true}],
+    gap:'Complete NEW module.',
+    render:()=>shellContent(`
+      <div class="card"><div class="card-head">E-Rx <span class="badge badge-new">${S.rx.length} meds</span></div><div class="card-body" id="rxList">
+        ${S.rx.map(r=>`<div class="rx-visual"><div class="rx-pill" style="background:${C.blue}18">💊</div><div style="flex:1"><strong>${r.name}</strong><br><span style="font-size:11px;color:var(--text-muted)">${r.dose} · ${r.dur}</span></div><button class="rx-del" data-del-rx="${r.id}">×</button></div>`).join('')}
+        <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap"><button class="btn btn-ghost" id="addRxBtn">+ Add Medicine</button><button class="btn btn-primary" id="printRxBtn">Print PDF</button><button class="btn btn-ghost" id="portalRxBtn">Send to Portal</button></div>
+      </div></div>`, [])
+  },
+  'dr-followup': {
+    title:'Follow-up & Complete', meta:'Consultation modal', role:'Doctor', status:'mvp', step:10,
+    features:[{t:'Complete updates analytics from your actions',n:true},{t:'Date picker for follow-up',n:false}],
+    gap:'Built in app.',
+    render:()=>`<div style="max-width:480px;margin:30px auto">${hint()}
+      <div class="card"><div class="card-body" style="padding:32px;text-align:center">
+        ${S.consultDone?`<div class="success-box"><div class="check">✓</div><strong>Consultation done!</strong><p style="font-size:12px;color:var(--text-muted);margin-top:8px">Revenue ${money(S.revenue)} · Follow-up Jun 28</p><button class="btn btn-primary" data-action="go-analytics" style="margin-top:14px">Analytics →</button></div>`:
+        `<div style="font-size:48px;margin-bottom:12px">📅</div><h3 style="font-family:var(--font-display)">Follow-up in 7 days</h3><input type="date" class="field-live" value="2026-06-28" style="margin:16px 0"/><button class="btn btn-primary" id="completeConsultBtn" style="width:100%;justify-content:center">Complete Consultation →</button>`}
+      </div></div>${activityFeed()}</div>`
+  },
+  'ca-analytics': {
+    title:'Clinic Analytics', meta:'/admin/analytics · reflects your demo actions', role:'Admin', status:'mvp', step:11,
+    features:[{t:'Revenue KPI updates after Mark Paid',n:true},{t:'Patient count reflects saves in flow',n:true},{t:'Consult complete badge when finished',n:false},{t:'Peak hours heatmap',n:true}],
+    gap:'Basic analytics live. Demo KPIs sync with interactive flow.',
+    render:()=>{
+      const rev7 = [180,220,190,280,260,320, Math.round(S.revenue/60)];
+      const todayPatients = 1248 + (S.patients - 24);
+      const mtdRev = S.revenue >= 100000 ? '₹'+(S.revenue/100000).toFixed(1)+'L' : money(S.revenue);
+      const demoBadge = S.consultDone ? '<span class="pill pill-g">Demo flow complete ✓</span>' : (S.paid ? '<span class="pill pill-b">Payment recorded</span>' : '');
+      return shellContent(`
+      ${demoBadge ? `<div style="margin-bottom:12px">${demoBadge}</div>` : ''}
+      ${kpis([['Patients',todayPatients.toLocaleString('en-IN'),S.patients>24?'↑ from demo':'↑ 4%'],['Revenue MTD',mtdRev,S.paid?'↑ ₹500 today':'↑ 12%'],['Consults Today',String(S.consultDone?13:12),S.consultDone?'Done ✓':''],['Rx Issued',String(S.rx.length),''],['NPS Score','4.8','']], true)}
+      <div class="grid2">
+        <div class="card"><div class="card-head">Revenue — 7 Days ${S.paid?'<span class="pill pill-g">+₹500</span>':''}</div><div class="card-body">${Charts.area(rev7, C.blue, 320, 120)}</div></div>
+        <div class="card"><div class="card-head">Today's Collection</div><div class="card-body">${Charts.bars([{label:'Cash',val:S.paymentMode==='Cash'?12:8,color:C.green,color2:'#34d399'},{label:'UPI',val:S.paymentMode==='UPI'?18:14,color:C.blue,color2:C.cyan},{label:'Card',val:5,color:C.purple,color2:C.pink}])}</div></div>
+        <div class="card"><div class="card-head">Patient Mix</div><div class="card-body">${Charts.donut([{label:'Returning',val:62,pct:62,color:C.blue},{label:'New',val:28+(S.patients-24),pct:28,color:C.green},{label:'Referred',val:10,pct:10,color:C.purple}])}</div></div>
+        <div class="card"><div class="card-head">Doctor Performance</div><div class="card-body">${Charts.hBars([{label:'Dr. Patel',val:93+(S.consultDone?8:0),display:money(93000+(S.revenue-18400)),color:C.blue,color2:C.cyan},{label:'Dr. Sharma',val:71,display:'₹71k',color:C.green,color2:'#34d399'},{label:'Dr. Gupta',val:58,display:'₹58k',color:C.purple,color2:C.pink}])}</div></div>
+      </div>
+      <div class="card" style="margin-top:14px"><div class="card-head">Peak Hours</div><div class="card-body">${Charts.heatmap([3,6,10,16,22,24,20,18,15,12,9,7])}</div></div>`, []);
+    }
+  },
+  'nm-billing': {
+    title:'Billing & Invoices', meta:'NEW · /admin/billing · interactive', role:'Admin', status:'new',
+    features:[{t:'Filter invoices by status — click row for actions',n:true},{t:'Mark Paid / Send Reminder on pending',n:true},{t:'Create Invoice adds to list + revenue',n:true},{t:'Charts sync with invoice state',n:true}],
+    gap:'Full NEW billing module — demo functional.',
+    render:()=>{
+      const filtered = S.invoiceFilter==='all' ? S.invoices : S.invoices.filter(i=>i.status===S.invoiceFilter);
+      const paid = S.invoices.filter(i=>i.status==='paid').length;
+      const pending = S.invoices.filter(i=>i.status==='pending'||i.status==='partial').reduce((a,i)=>a+i.amount,0);
+      const todayTotal = S.invoices.filter(i=>i.status==='paid').reduce((a,i)=>a+i.amount,0) + (S.paid?500:0);
+      return shellContent(`
+      ${hint()}
+      <div class="filter-pills">
+        ${['all','paid','partial','pending'].map(f=>`<button type="button" class="filter-pill ${S.invoiceFilter===f?'on':''}" data-inv-filter="${f}">${f==='all'?'All':f.charAt(0).toUpperCase()+f.slice(1)}</button>`).join('')}
+        <button type="button" class="btn btn-primary" id="createInvoiceBtn" style="margin-left:auto;padding:5px 12px;font-size:11px">+ Create Invoice</button>
+      </div>
+      ${kpis([['Today',money(todayTotal),''],['Pending',money(pending),''],['Paid Count',String(paid)+'/'+S.invoices.length,''],['Overdue','₹2,100','']],true)}
+      <div class="grid2">
+        <div class="card interactive"><div class="card-head">Invoice Status</div><div class="card-body">${Charts.interactiveDonut([
+          {label:'Paid',val:S.invoices.filter(i=>i.status==='paid').length,pct:40,color:C.green},
+          {label:'Partial',val:S.invoices.filter(i=>i.status==='partial').length,pct:20,color:C.amber},
+          {label:'Pending',val:S.invoices.filter(i=>i.status==='pending').length,pct:30,color:C.blue},
+          {label:'Overdue',val:1,pct:10,color:C.red},
+        ],'Total','billing')}</div></div>
+        <div class="card"><div class="card-head">Monthly Revenue</div><div class="card-body">${Charts.bars([{label:'Jan',val:60,color:C.blue,color2:C.cyan},{label:'Feb',val:72,color:C.blue,color2:C.cyan},{label:'Mar',val:68,color:C.blue,color2:C.cyan},{label:'Apr',val:85,color:C.green,color2:'#34d399'},{label:'May',val:90,color:C.green,color2:'#34d399'},{label:'Jun',val:95+(S.paid?5:0),color:C.green,color2:'#34d399'}])}</div></div>
+      </div>
+      <div class="card" style="margin-top:14px"><div class="card-head">Invoices <span style="font-size:10px;color:var(--text-muted)">${filtered.length} shown · click row</span></div><div class="card-body" style="padding:0"><table><thead><tr>${['Invoice','Patient','Amount','GST','Status'].map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${filtered.map(inv=>`<tr class="click-row" data-invoice="${inv.id}"><td>${inv.id}</td><td><strong>${inv.patient}</strong></td><td>${money(inv.amount)}</td><td>${money(inv.gst)}</td><td><span class="pill pill-${inv.status==='paid'?'g':inv.status==='partial'?'a':'b'}">${inv.status}</span></td></tr>`).join('')}</tbody></table></div></div>`,
+      [{label:'Collect Payment',action:'go-payment'},{label:'Analytics',action:'go-analytics'}]);
+    }
+  },
+  'nm-pharmacy': {
+    title:'Pharmacy & Inventory', meta:'NEW · /admin/pharmacy · interactive', role:'Admin', status:'new',
+    features:[{t:'Dispense reduces stock · Restock adds qty',n:true},{t:'Low/out alerts clickable',n:true},{t:'Dispense from active Rx list',n:true},{t:'Category chart updates on dispense',n:true}],
+    gap:'Full NEW pharmacy module — demo functional.',
+    render:()=>{
+      const stockRows = S.pharmacyStock.map(s=>{
+        const cls = s.qty===0?'out':s.qty<s.min?'low':'';
+        return `<div class="stock-row ${cls}" data-stock-id="${s.id}">
+          <div style="flex:1"><strong>${s.name}</strong><br><span style="font-size:10px;color:var(--text-muted)">${s.qty} units ${s.qty<s.min?'· LOW':''}${s.qty===0?'· OUT':''}</span></div>
+          <button type="button" class="btn btn-ghost" data-dispense="${s.id}" style="padding:4px 10px;font-size:10px" ${s.qty===0?'disabled':''}>Dispense</button>
+          <button type="button" class="btn btn-primary" data-restock="${s.id}" style="padding:4px 10px;font-size:10px">+ Restock</button>
+        </div>`;
+      }).join('');
+      return shellContent(`
+      ${hint()}
+      <div class="grid2">
+        <div class="card"><div class="card-head">Stock Levels <span class="badge badge-new">Live</span></div><div class="card-body">${stockRows}</div></div>
+        <div class="card"><div class="card-head">Category Mix</div><div class="card-body">${Charts.pieSvg([{label:'Tablets',val:55,color:C.blue},{label:'Syrups',val:25,color:C.cyan},{label:'Injections',val:12,color:C.purple},{label:'Other',val:8,color:C.amber}],130)}</div></div>
+      </div>
+      <div class="card" style="margin-top:14px"><div class="card-head">Dispense from Rx (${S.rx.length} active)</div><div class="card-body">
+        ${S.rx.map(r=>`<div class="rx-visual"><div class="rx-pill" style="background:${C.blue}18">💊</div><div style="flex:1"><strong>${r.name}</strong><br><span style="font-size:11px;color:var(--text-muted)">${r.qty} units needed</span></div><button type="button" class="btn btn-primary" data-rx-dispense="${r.id}" style="padding:4px 12px;font-size:10px">Dispense All</button></div>`).join('')}
+      </div></div>`,
+      [{label:'E-Rx',action:'go-rx'},{label:'Billing',action:'go-billing'}]);
+    }
+  },
+  'nm-portal': {
+    title:'Patient Portal', meta:'NEW · /portal · interactive', role:'Patient', status:'new',
+    features:[{t:'Book appointment — picks slot + confirms',n:true},{t:'Pay bill online — syncs with billing',n:true},{t:'Download Rx PDF from active prescriptions',n:true},{t:'Visit history timeline expandable',n:true}],
+    gap:'External patient app — fully interactive demo.',
+    render:()=>{
+      const pendingBill = S.portalBillPaid ? 0 : 500;
+      const portalItems = [
+        { id:'book', icon:'📅', title:'Book Appointment', sub: S.portalBooked ? 'Booked ✓ Today '+S.selectedSlot : 'Next slot: Today 2 PM', done: S.portalBooked },
+        { id:'visits', icon:'📋', title:'My Visits', sub: `${12+(S.consultDone?1:0)} total visits`, done: false },
+        { id:'rx', icon:'💊', title:'Download Rx', sub: `${S.rx.length} active prescriptions`, done: false },
+        { id:'pay', icon:'₹', title:'Pay Bill', sub: pendingBill ? money(pendingBill)+' pending' : 'All paid ✓', done: S.portalBillPaid },
+      ];
+      return `<div style="max-width:440px;margin:0 auto">${hint()}
+      <div class="device-frame">
+      <div class="device-bar"><span class="dd r"></span><span class="dd y"></span><span class="dd g"></span><span class="durl">portal.doctorcrm.com · ${S.patient.name||'Rajesh Kumar'}</span></div>
+      <div style="padding:24px;background:linear-gradient(180deg,rgba(37,99,235,0.08),transparent)">
+        <h3 style="font-family:var(--font-display);font-size:20px;font-weight:800">Patient Portal</h3>
+        <p style="font-size:12px;color:var(--text-muted);margin:6px 0 20px">Book · History · Rx · Pay — all clickable</p>
+        ${portalItems.map(a=>`
+          <div class="card portal-card ${a.done?'done':''}" data-portal="${a.id}" style="margin-bottom:10px">
+            <div class="card-body" style="padding:14px;display:flex;align-items:center;gap:12px">
+              <span style="font-size:22px">${a.icon}</span><div><strong style="font-size:13px">${a.title}</strong><br><span style="font-size:10px;color:var(--text-muted)">${a.sub}</span></div>
+              <span style="margin-left:auto;color:var(--primary)">${a.done?'✓':'→'}</span>
+            </div>
+          </div>`).join('')}
+        <div class="card" style="margin-top:14px"><div class="card-head">Your Health Trend</div><div class="card-body">${Charts.area([4,5,4,6,5,7,6,S.vitals.bp>130?8:5], C.cyan, 300, 70)}</div></div>
+      </div></div>${activityFeed()}</div>`;
+    }
+  },
+  'auth-forgot': {
+    title:'Forgot Password', meta:'NEW · /forgot-password', role:'Auth', status:'new',
+    features:[{t:'Email reset link flow',n:true},{t:'Back to login',n:false}],
+    gap:'UI ready — backend email service in Phase 2.',
+    render:()=>`<div class="device-frame" style="max-width:440px;margin:0 auto">${hint()}
+      <div style="padding:32px"><h3 style="font-family:var(--font-display);margin-bottom:8px">Forgot password?</h3>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:20px">We'll send a reset link to your email.</p>
+      <div class="field-label">Email</div><input class="field" value="reception@democlinic.com" readonly style="width:100%;margin-bottom:16px"/>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" data-go-screen="auth-login">Send reset link →</button>
+      <p style="text-align:center;margin-top:14px;font-size:11px;color:var(--primary);cursor:pointer" data-go-screen="auth-login">← Back to login</p></div></div>`
+  },
+  'sa-dashboard': {
+    title:'Platform Dashboard', meta:'Super Admin · /super-admin/dashboard', role:'Super Admin', status:'mvp',
+    features:[{t:'All clinics KPIs',n:false},{t:'Subscription revenue',n:true},{t:'Create clinic flow',n:false}],
+    gap:'Live in app. Subscription metrics NEW.',
+    render:()=>shellContent(`${hint()}${kpis([['Active Clinics','24','↑ 3'],['MRR','₹4.2L','↑ 12%'],['Users','186',''],['Support Tickets','2','open']])}
+      <div class="grid2"><div class="card"><div class="card-head">Clinic Growth</div><div class="card-body">${Charts.area([2,3,4,5,6,7,8,9],C.blue,320,100)}</div></div>
+      <div class="card"><div class="card-head">Plan Distribution</div><div class="card-body">${Charts.pieSvg([{label:'Pro',val:45,color:C.blue},{label:'Starter',val:35,color:C.cyan},{label:'Enterprise',val:20,color:C.purple}],120)}</div></div></div>
+      <div style="margin-top:14px;display:flex;gap:8px"><button class="btn btn-primary" data-go-screen="sa-clinics">Manage Clinics →</button><button class="btn btn-ghost" data-go-screen="nm-audit">Audit Log</button></div>`,
+      [{label:'Clinics',action:'go-sa-clinics'}])
+  },
+  'sa-clinics': {
+    title:'Clinics List', meta:'Super Admin · create & suspend', role:'Super Admin', status:'mvp',
+    features:[{t:'Create clinic wizard',n:false},{t:'Suspend / activate',n:false},{t:'Assign subscription plan',n:true}],
+    gap:'Core flow live in React app.',
+    render:()=>shellContent(`${hint()}
+      <button class="btn btn-primary" style="margin-bottom:14px">+ Create Clinic</button>
+      <div class="card"><div class="card-body">${['Demo Clinic|Mumbai|Pro|Active','City Care|Pune|Starter|Active','Health Plus|Delhi|Trial|Suspended'].map(r=>{
+        const [n,c,p,s]=r.split('|');
+        return `<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)"><div style="flex:1"><strong>${n}</strong><br><span style="font-size:11px;color:var(--text-muted)">${c} · ${p}</span></div><span class="pill ${s==='Active'?'pill-g':'pill-r'}">${s}</span></div>`;
+      }).join('')}</div></div>`,[])
+  },
+  'nm-communications': {
+    title:'Communications Center', meta:'NEW · SMS / WhatsApp / Email', role:'Admin', status:'new',
+    features:[{t:'Template editor',n:true},{t:'Delivery logs',n:true},{t:'Bulk send to patients',n:true}],
+    gap:'Frontend ready — Twilio/WhatsApp API in Phase 2.',
+    render:()=>shellContent(`${hint()}
+      <div class="grid2"><div class="card"><div class="card-head">Send Message</div><div class="card-body">
+        <div class="field-label">Channel</div><select class="field" style="width:100%;margin-bottom:12px"><option>WhatsApp</option><option>SMS</option><option>Email</option></select>
+        <div class="field-label">Template</div><select class="field" style="width:100%;margin-bottom:12px"><option>Appointment reminder</option><option>Follow-up</option></select>
+        <button class="btn btn-primary" id="sendSmsBtn">Send to 24 patients</button>
+      </div></div>
+      <div class="card"><div class="card-head">Recent Log</div><div class="card-body">
+        ${S.activity.length?S.activity.slice(0,4).map(a=>`<div style="font-size:11px;padding:6px 0;border-bottom:1px solid var(--border)">${a.msg||a}</div>`).join(''):'<div style="font-size:11px;color:var(--text-muted)">Send a message to see logs</div>'}
+      </div></div></div>`,[])
+  },
+  'nm-labs': {
+    title:'Lab Orders', meta:'NEW · order tests & results', role:'Doctor', status:'new',
+    features:[{t:'Order panel from consultation',n:true},{t:'Upload results PDF',n:true},{t:'Trend charts on vitals',n:true}],
+    gap:'Frontend preview — LIS integration Phase 3.',
+    render:()=>shellContent(`${hint()}
+      <button class="btn btn-primary" style="margin-bottom:14px">+ Order Tests</button>
+      <div class="card"><div class="card-body">
+        <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)"><strong>LAB-201 CBC</strong><span class="pill pill-a">Pending</span><button class="btn btn-ghost" style="margin-left:auto;padding:4px 10px;font-size:10px">Upload Result</button></div>
+        <div style="display:flex;gap:12px;padding:12px 0"><strong>LAB-202 Lipid Profile</strong><span class="pill pill-g">Completed</span></div>
+      </div></div>
+      <div class="card" style="margin-top:14px"><div class="card-head">HbA1c Trend</div><div class="card-body">${Charts.area([5.8,5.9,6.1,6.0,6.2,6.4],C.purple,300,80)}</div></div>`,[])
+  },
+  'nm-audit': {
+    title:'Audit Log', meta:'NEW · compliance trail', role:'Admin', status:'new',
+    features:[{t:'Who did what when',n:true},{t:'Filter by user/action',n:true},{t:'Export CSV',n:true}],
+    gap:'Frontend ready — backend audit middleware Phase 2.',
+    render:()=>shellContent(`${hint()}
+      <div class="card"><div class="card-body">
+        ${[['2026-06-08 10:15','reception@','Created patient Rajesh Kumar'],['2026-06-08 11:02','doctor@','Completed consultation #5'],['2026-06-07 16:40','admin@','Updated Dr. Patel fee → ₹500']].map(([t,u,a])=>
+          `<div class="audit-row"><time>${t}</time><span style="color:var(--primary);min-width:90px">${u}</span><span>${a}</span></div>`).join('')}
+      </div></div>`,[])
+  },
+  'rc-tv-queue': {
+    title:'Queue TV Display', meta:'NEW · waiting room fullscreen', role:'Reception', status:'new',
+    features:[{t:'Large token display',n:true},{t:'Auto-refresh from queue',n:true},{t:'Now serving + up next',n:true}],
+    gap:'React route: /reception/queue/tv',
+    render:()=>{const serving=S.queue.find(q=>q.status==='called'||q.status==='in-consult')||S.queue.find(q=>q.status==='next');
+      return `${hint()}<div class="tv-display">
+        <div style="font-size:14px;opacity:0.7;margin-bottom:8px">NOW SERVING</div>
+        <div class="tv-token">#${serving?.token||4}</div>
+        <div style="font-size:22px;font-weight:700;margin-top:12px">${serving?.name||'Rajesh Kumar'}</div>
+        <div style="opacity:0.6;margin-top:4px">${serving?.doctor||'Dr. Patel'}</div>
+        <div style="display:flex;gap:16px;justify-content:center;margin-top:32px;flex-wrap:wrap">
+          ${S.queue.filter(q=>q.token!==serving?.token).slice(0,3).map(q=>`<div style="background:rgba(255,255,255,0.08);padding:12px 20px;border-radius:10px"><div style="font-size:11px;opacity:0.5">NEXT</div><div style="font-size:28px;font-weight:700">#${q.token}</div></div>`).join('')}
+        </div></div>${activityFeed()}`;}
+  },
+  'mob-dashboard': {
+    title:'Mobile — Reception', meta:'390px · responsive', role:'Reception', status:'new',
+    features:[{t:'Card-based patient list',n:true},{t:'Quick book + queue',n:true},{t:'Touch-friendly nav',n:true}],
+    gap:'PWA / native app Phase 3.',
+    render:()=>`<div class="mobile-shell">${hint()}
+      <div style="padding:16px;background:linear-gradient(135deg,#2563eb,#06b6d4);color:#fff"><strong style="font-size:16px">Demo Clinic</strong><br><span style="font-size:11px;opacity:0.85">Reception · ${now()}</span></div>
+      <div style="padding:14px">${kpis([['Patients',String(S.patients),''],['Queue',String(S.waiting),'live'],['Revenue',money(S.revenue),'']])}
+      <div class="card" style="margin-top:12px"><div class="card-head">Quick Actions</div><div class="card-body" style="display:grid;gap:8px">
+        <button class="btn btn-primary" data-go-screen="rc-add-patient">+ Add Patient</button>
+        <button class="btn btn-ghost" data-go-screen="rc-queue">View Queue</button>
+        <button class="btn btn-ghost" data-go-screen="rc-book-appt">Book Appointment</button>
+      </div></div></div></div>${activityFeed()}`
+  },
+  'dr-labs': {
+    title:'Lab Orders', meta:'Doctor · from consultation', role:'Doctor', status:'new',
+    features:[{t:'Order tests from consult',n:true},{t:'Upload results',n:true}],
+    gap:'Linked from consultation.',
+    render:()=>shellContent(`${hint()}<button class="btn btn-primary" style="margin-bottom:14px">+ Order Tests</button>
+      <div class="card"><div class="card-body"><div style="padding:12px 0;border-bottom:1px solid var(--border)"><strong>CBC</strong> <span class="pill pill-a">Pending</span></div>
+      <div style="padding:12px 0"><strong>Lipid Profile</strong> <span class="pill pill-g">Done</span></div></div></div>`,[])
+  }
+};
+
+const DEMO_STORAGE_KEY = 'doctor-crm-demo-v1';
+function saveDemoState() {
+  try { localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify({ S, current: App.current, history: App.history })); } catch (_) {}
+}
+function loadDemoState() {
+  try {
+    const raw = localStorage.getItem(DEMO_STORAGE_KEY);
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    if (d.S) Object.assign(S, d.S);
+    if (d.current) App.current = d.current;
+    if (d.history) App.history = d.history || [];
+  } catch (_) {}
+}
+function smsNotify(msg) {
+  const el = document.getElementById('smsToast');
+  if (!el) return;
+  el.textContent = msg || 'WhatsApp sent ✓';
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2800);
+}
+const TOUR_STEPS = [
+  { sel: '[data-flow="e2e"]', text: 'Start here — full patient journey demo.' },
+  { sel: '#nextBtn', text: 'Step forward through the flow with Next →' },
+  { sel: '#presentBtn', text: 'Presenter mode hides chrome for stakeholder meetings.' },
+  { sel: '[data-go="nm-billing"]', text: 'Jump to NEW modules anytime from sidebar.' },
+];
+let tourIdx = 0;
+function runTour() {
+  const root = document.getElementById('tourRoot');
+  if (tourIdx >= TOUR_STEPS.length) { root.innerHTML = ''; tourIdx = 0; return; }
+  const step = TOUR_STEPS[tourIdx];
+  const target = document.querySelector(step.sel);
+  root.innerHTML = `<div class="tour-spotlight"></div><div class="tour-box" style="top:80px;right:24px"><p style="font-size:13px;line-height:1.5">${step.text}</p><button type="button" id="tourNext">${tourIdx < TOUR_STEPS.length - 1 ? 'Next' : 'Done'}</button></div>`;
+  document.getElementById('tourNext').onclick = () => { tourIdx++; runTour(); };
+  if (target) target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+let uiLang = localStorage.getItem('demo-lang') || 'en';
+const I18N = {
+  en: { next: 'Next →', back: '← Back', reset: '↺ Reset', auto: '▶ Auto demo' },
+  hi: { next: 'आगे →', back: '← पीछे', reset: '↺ रीसेट', auto: '▶ ऑटो डेमो' },
+};
+function applyLang() {
+  const t = I18N[uiLang] || I18N.en;
+  const n = document.getElementById('nextBtn'); if (n) n.textContent = t.next;
+  const p = document.getElementById('prevBtn'); if (p) p.textContent = t.back;
+  const r = document.getElementById('resetBtn'); if (r) r.textContent = t.reset;
+  const a = document.getElementById('autoBtn'); if (a && !App.auto) a.textContent = t.auto;
+}
+
+const App = {
+  current:'cover', flow:E2E, auto:null, liveTimer:null, history:[], _searchTimer:null,
+  init() {
+    loadDemoState();
+    this.render();
+    applyLang();
+    document.getElementById('nextBtn').onclick=()=>this.next();
+    document.getElementById('prevBtn').onclick=()=>this.prev();
+    document.getElementById('autoBtn').onclick=()=>this.toggleAuto();
+    document.getElementById('themeBtn').onclick=()=>{ document.documentElement.dataset.theme = document.documentElement.dataset.theme==='dark'?'light':'dark'; };
+    document.getElementById('presentBtn').onclick=()=>{ document.documentElement.classList.toggle('presenter-mode'); this.toast(document.documentElement.classList.contains('presenter-mode')?'Presenter mode ON':'Presenter mode OFF'); };
+    document.getElementById('tourBtn').onclick=()=>{ tourIdx=0; runTour(); };
+    document.getElementById('langBtn').onclick=()=>{ uiLang=uiLang==='en'?'hi':'en'; localStorage.setItem('demo-lang',uiLang); applyLang(); this.toast(uiLang==='hi'?'हिंदी UI':'English UI'); };
+    document.getElementById('menuBtn').onclick=()=>this.toggleSb();
+    document.getElementById('panelBtn').onclick=()=>document.getElementById('panel').classList.toggle('open');
+    document.getElementById('overlay').onclick=()=>{this.toggleSb(false);document.getElementById('panel').classList.remove('open');closeModal();};
+    document.querySelectorAll('[data-flow]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-flow]').forEach(x=>x.classList.remove('active'));b.classList.add('active');this.startFlow(b.dataset.flow);this.toggleSb(false);});
+    document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{this.go(b.dataset.go);this.toggleSb(false);});
+    document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')this.next();if(e.key==='ArrowLeft')this.prev();});
+    document.getElementById('resetBtn').onclick=()=>resetDemo();
+    document.getElementById('modalRoot').addEventListener('click',e=>{
+      if(e.target.dataset.close!==undefined){closeModal();return;}
+      const btn=e.target.closest('[data-action]');
+      if(btn)this.runAction(btn.dataset.action);
+    });
+  },
+  runAction(a){
+    const go=id=>{closeModal();this.go(id);};
+    if(a==='go-add-patient')this.go('rc-add-patient');
+    else if(a==='go-book')go('rc-book-appt');
+    else if(a==='go-payment')this.go('rc-payment');
+    else if(a==='go-queue')this.go('rc-queue');
+    else if(a==='go-dr-queue')this.go('dr-queue');
+    else if(a==='go-rx')this.go('dr-prescription');
+    else if(a==='go-analytics')this.go('ca-analytics');
+    else if(a==='go-billing')this.go('nm-billing');
+    else if(a==='go-sa-clinics')this.go('sa-clinics');
+    else if(a==='clear-form'){S.patient={name:'',phone:'',age:'',gender:'Male'};this.refresh(true);}
+    else if(a==='simulate-payment'){
+      S.paid=true; S.revenue+=500; if(!S.receiptId) S.receiptId=String(Date.now()).slice(-6);
+      const pending=S.invoices.find(i=>i.status==='pending');
+      if(pending)pending.status='paid';
+      log('Simulated ₹500 payment — charts updated');
+      this.refresh(true);
+    }
+  },
+  go(id, opts={}) {
+    if (!SCREENS[id]) return;
+    if (this.current === 'cover' && id !== 'cover') {
+      S.coverApptFilter = null; S.coverSelectedDay = null; S.coverPeakHour = null; S.coverDoctor = null;
+    }
+    if (!opts.noHistory && !opts.fromBack && id !== this.current) this.history.push(this.current);
+    if (this.history.length > 30) this.history.shift();
+    this.anim(() => { this.current = id; this.render(); }, !!opts.instant);
+  },
+  startFlow(n) {
+    const m={e2e:E2E,reception:E2E.slice(1,6),doctor:E2E.slice(6,10),new:['nm-billing','nm-pharmacy','nm-portal','dr-prescription'],super:['sa-dashboard','sa-clinics','nm-audit']};
+    this.flow=m[n]||E2E;
+    this.history=[];
+    this.anim(()=>{this.current=this.flow[0];this.render();});
+  },
+  next(){
+    if(this.current==='cover'){this.startFlow('e2e');return;}
+    const i=this.flow.indexOf(this.current);
+    if(i>=0&&i<this.flow.length-1){
+      this.history.push(this.current);
+      this.anim(()=>{this.current=this.flow[i+1];this.render();});
+    } else this.toast('Demo complete!');
+  },
+  prev(){
+    if(this.history.length){
+      const prevId=this.history.pop();
+      this.go(prevId,{fromBack:true,noHistory:true,instant:false});
+      return;
+    }
+    const i=this.flow.indexOf(this.current);
+    if(i>0)this.anim(()=>{this.current=this.flow[i-1];this.render();});
+    else if(this.current!=='cover')this.anim(()=>{this.current='cover';this.render();});
+  },
+  toggleAuto(){if(this.auto){clearInterval(this.auto);this.auto=null;document.getElementById('autoBtn').textContent='▶ Auto demo';return;}if(this.current==='cover')this.startFlow('e2e');document.getElementById('autoBtn').textContent='⏸ Stop';this.auto=setInterval(()=>{if(this.flow.indexOf(this.current)>=this.flow.length-1){this.toggleAuto();return;}this.next();},3500);},
+  toggleSb(o){const s=document.getElementById('sidebar'),v=document.getElementById('overlay'),on=o!==undefined?o:!s.classList.contains('open');s.classList.toggle('open',on);v.classList.toggle('open',on);},
+  toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);},
+  anim(cb,instant){
+    const st=document.getElementById('stage');
+    if(instant){cb();return;}
+    st.classList.add('exit');
+    setTimeout(()=>{cb();st.classList.remove('exit');},200);
+  },
+  refresh(silent=false){
+    const s=SCREENS[this.current];
+    if(!s)return;
+    const stage=document.getElementById('stage');
+    if(silent)stage.classList.add('no-animate');
+    stage.innerHTML=s.render();
+    this.bindScreen();
+    if(silent)requestAnimationFrame(()=>stage.classList.remove('no-animate'));
+  },
+  updateQueueTimers(){
+    document.querySelectorAll('[data-queue-wait]').forEach(el=>{
+      const q=S.queue.find(x=>x.token===+el.dataset.queueWait);
+      if(!q)return;
+      if(q.status==='in-consult')el.textContent=q.doctor+' · In consult';
+      else if(q.status==='called')el.textContent=q.doctor+' · Called ✓';
+      else el.textContent=`${q.doctor} · ${q.wait}m wait${q.status==='urgent'?' · URGENT':''}`;
+    });
+    const drWait=document.querySelector('[data-dr-queue-wait]');
+    const next=S.queue.find(q=>q.status==='next');
+    if(drWait&&next)drWait.textContent=next.wait+'m';
+  },
+  updateLiveKpis(){
+    document.querySelectorAll('[data-kpi]').forEach(k=>{
+      const l=k.dataset.kpi;
+      const val=k.querySelector('.val');
+      if(!val)return;
+      if(l.includes('Revenue')||l.includes('Today')&&l.includes('₹'))val.textContent=money(S.revenue);
+      else if(l.includes('Waiting')||l.includes('Queue'))val.textContent=String(S.waiting);
+      else if(l.includes('Patients'))val.textContent=String(S.patients);
+    });
+  },
+  tickLive(){
+    document.querySelectorAll('#liveClock').forEach(el=>{el.textContent=now();});
+    if(!['rc-queue','dr-queue'].includes(this.current))return;
+    S.queue.forEach(q=>{
+      if(q.status!=='waiting'&&q.status!=='next'&&q.status!=='urgent')return;
+      if(q.waitSec==null)q.waitSec=q.wait*60;
+      q.waitSec+=1;
+      q.wait=Math.floor(q.waitSec/60);
+    });
+    this.updateQueueTimers();
+  },
+  startLive(){
+    this.stopLive();
+    this.liveTimer=setInterval(()=>this.tickLive(),1000);
+  },
+  stopLive(){if(this.liveTimer){clearInterval(this.liveTimer);this.liveTimer=null;}},
+  syncNav(){
+    document.querySelectorAll('[data-go]').forEach(b=>b.classList.toggle('active', b.dataset.go === this.current));
+  },
+  bindScreen(){
+    const st=document.getElementById('stage');
+    if(!st)return;
+
+    st.querySelectorAll('[data-go-screen]').forEach(el=>el.onclick=()=>this.go(el.dataset.goScreen));
+
+    // Demo Clinic sidebar — Dashboard, Queue, Patients, etc.
+    st.querySelectorAll('[data-mnav]').forEach(btn=>{
+      btn.onclick=e=>{
+        e.preventDefault();
+        const id=btn.dataset.mnav;
+        if(id) this.go(id);
+      };
+    });
+
+    const patchDetail=()=>{const el=document.getElementById('chartDetail');if(el)el.innerHTML=coverChartDetail();};
+
+    // ── Cover dashboard — interactive charts ──
+    st.querySelector('#startDemoBtn')?.addEventListener('click',()=>{log('Starting end-to-end demo');this.startFlow('e2e');});
+    st.querySelectorAll('[data-period]').forEach(btn=>btn.onclick=()=>{
+      S.coverPeriod=btn.dataset.period; S.coverSelectedDay=null;
+      log(`Revenue view: ${S.coverPeriod}`); this.refresh(true);
+    });
+    st.querySelectorAll('[data-rev-day]').forEach(dot=>dot.onclick=e=>{
+      e.stopPropagation();
+      S.coverSelectedDay=+dot.dataset.revDay; S.coverPeakHour=null; S.coverApptFilter=null; S.coverDoctor=null;
+      log(`${dot.dataset.revLbl}: ${money(+dot.dataset.revVal*100)} revenue`);
+      this.refresh(true);
+    });
+    st.querySelectorAll('[data-segment]').forEach(btn=>btn.onclick=()=>{
+      const seg=btn.dataset.segment;
+      const chartCtx=btn.dataset.chartCtx;
+      if(chartCtx==='billing'){
+        S.billingChartSel=S.billingChartSel===seg?null:seg;
+        const f={Paid:'paid',Partial:'partial',Pending:'pending',Overdue:'pending'};
+        if(f[seg])S.invoiceFilter=f[seg];
+        log(`Filter: ${seg}`);
+        this.refresh(true);
+        return;
+      }
+      const nav={Completed:'dr-followup',Waiting:'rc-queue',Scheduled:'rc-book-appt',Done:'dr-followup',Cancel:null,Cancelled:null};
+      if(nav[seg]){log(`${seg} → opening`);this.go(nav[seg]);return;}
+      if(App.current!=='cover')return;
+      S.coverApptFilter=S.coverApptFilter===seg?null:seg;
+      S.coverSelectedDay=null; S.coverPeakHour=null; S.coverDoctor=null;
+      this.refresh(true);
+    });
+    st.querySelectorAll('[data-hm]').forEach(cell=>cell.onclick=()=>{
+      S.coverPeakHour=+cell.dataset.hm; S.coverSelectedDay=null; S.coverApptFilter=null; S.coverDoctor=null;
+      log(`${cell.dataset.hmLbl}: ${cell.dataset.hmVal} patients`);
+      this.refresh(true);
+    });
+    st.querySelectorAll('[data-doc]').forEach(row=>row.onclick=()=>{
+      S.coverDoctor=row.dataset.doc; S.coverSelectedDay=null; S.coverPeakHour=null; S.coverApptFilter=null;
+      log(`${S.coverDoctor} revenue share`);
+      this.refresh(true);
+    });
+    st.querySelectorAll('[data-traffic]').forEach(bar=>bar.onclick=()=>log(`Hour ${bar.dataset.trafficLbl}: ${bar.dataset.trafficVal} patients`));
+
+    // ── Billing ──
+    st.querySelectorAll('[data-inv-filter]').forEach(btn=>btn.onclick=()=>{S.invoiceFilter=btn.dataset.invFilter;this.refresh(true);});
+    st.querySelectorAll('[data-invoice]').forEach(row=>row.onclick=()=>{
+      const inv=S.invoices.find(i=>i.id===row.dataset.invoice);
+      if(!inv)return;
+      openModal(`<h4>${inv.id}</h4><p style="font-size:13px;color:var(--text-muted);line-height:1.8"><strong>${inv.patient}</strong><br>${money(inv.amount)} + ${money(inv.gst)} GST<br>Status: ${inv.status}</p>
+        ${inv.status!=='paid'?`<button class="btn btn-primary" style="width:100%;margin-top:10px;justify-content:center" id="modalMarkPaid">Mark as Paid →</button>`:''}
+        <button class="btn btn-ghost" style="width:100%;margin-top:8px;justify-content:center" data-action="go-payment">Collect at Reception</button>`);
+      document.getElementById('modalMarkPaid')?.addEventListener('click',()=>{
+        inv.status='paid'; S.revenue+=inv.amount; if(!S.receiptId)S.receiptId=String(Date.now()).slice(-6);
+        closeModal(); log(`${inv.id} marked paid`); App.refresh(true);
+      });
+    });
+    st.querySelector('#createInvoiceBtn')?.addEventListener('click',()=>{
+      const id='INV-'+Math.floor(1045+Math.random()*9000);
+      S.invoices.unshift({id,patient:S.patient.name||'Walk-in',amount:500,gst:90,status:'pending'});
+      log(`Created ${id}`); this.refresh(true);
+    });
+
+    // ── Pharmacy ──
+    st.querySelectorAll('[data-dispense]').forEach(btn=>btn.onclick=()=>{
+      const item=S.pharmacyStock.find(s=>s.id===+btn.dataset.dispense);
+      if(!item||item.qty<=0)return;
+      item.qty=Math.max(0,item.qty-10); log(`Dispensed ${item.name} · ${item.qty} left`); this.refresh(true);
+    });
+    st.querySelectorAll('[data-restock]').forEach(btn=>btn.onclick=()=>{
+      const item=S.pharmacyStock.find(s=>s.id===+btn.dataset.restock);
+      if(!item)return;
+      item.qty+=50; log(`Restocked ${item.name} → ${item.qty}`); this.refresh(true);
+    });
+    st.querySelectorAll('[data-rx-dispense]').forEach(btn=>btn.onclick=()=>{
+      const rx=S.rx.find(r=>r.id===+btn.dataset.rxDispense);
+      if(!rx)return;
+      const stock=S.pharmacyStock.find(s=>rx.name.toLowerCase().includes(s.name.toLowerCase().split(' ')[0]));
+      if(stock)stock.qty=Math.max(0,stock.qty-rx.qty);
+      log(`Dispensed Rx: ${rx.name}`); this.refresh(true);
+    });
+
+    // ── Patient Portal ──
+    st.querySelectorAll('[data-portal]').forEach(card=>card.onclick=()=>{
+      const action=card.dataset.portal;
+      if(action==='book'){
+        if(S.portalBooked){log('Already booked');return;}
+        openModal(`<h4>Book Appointment</h4><p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Pick a slot for ${S.patient.name||'Rajesh Kumar'}</p>
+          <div class="slot-grid">${['2:00 PM','2:30 PM','3:00 PM','3:30 PM'].map(s=>`<button type="button" class="slot-btn ${S.selectedSlot===s?'picked':''}" data-portal-slot="${s}">${s}</button>`).join('')}</div>
+          <button class="btn btn-primary" id="portalConfirmBook" style="width:100%;margin-top:14px;justify-content:center">Confirm →</button>`);
+        document.querySelectorAll('[data-portal-slot]').forEach(b=>b.onclick=()=>{S.selectedSlot=b.dataset.portalSlot;document.querySelectorAll('[data-portal-slot]').forEach(x=>x.classList.remove('picked'));b.classList.add('picked');});
+        document.getElementById('portalConfirmBook')?.addEventListener('click',()=>{S.portalBooked=true;S.booked=true;closeModal();log(`Portal booking ${S.selectedSlot}`);App.refresh(true);});
+      } else if(action==='visits'){
+        openModal(`<h4>Visit History</h4>${['Jun 1 — Dr. Patel — Hypertension','May 15 — Dr. Sharma — Fever','Apr 2 — Dr. Patel — Routine'].map(v=>`<div style="padding:10px 0;border-bottom:1px solid var(--border);font-size:12px">${v}</div>`).join('')}<button class="btn btn-primary" data-action="go-book" style="width:100%;margin-top:12px;justify-content:center">Book Next Visit</button>`);
+      } else if(action==='rx'){
+        if(!S.rx.length){log('No active prescriptions');return;}
+        openModal(`<h4>Your Prescriptions</h4>${S.rx.map(r=>`<div class="rx-visual"><div class="rx-pill" style="background:${C.blue}18">💊</div><div><strong>${r.name}</strong><br><span style="font-size:11px;color:var(--text-muted)">${r.dose}</span></div></div>`).join('')}<button class="btn btn-primary" id="portalDlRx" style="width:100%;margin-top:12px;justify-content:center">Download All PDF</button>`);
+        document.getElementById('portalDlRx')?.addEventListener('click',()=>{closeModal();log('Rx PDF downloaded');});
+      } else if(action==='pay'){
+        if(S.portalBillPaid){log('Bill already paid');return;}
+        openModal(`<h4>Pay Bill</h4><p style="font-size:28px;font-weight:800;font-family:var(--font-display);color:var(--primary);margin:16px 0">${money(500)}</p>
+          <div style="display:flex;gap:8px;margin-bottom:14px">${['UPI','Card','Net Banking'].map(m=>`<button type="button" class="btn btn-ghost pay-btn ${S.paymentMode===m?'active':''}" data-portal-pay="${m}">${m}</button>`).join('')}</div>
+          <button class="btn btn-primary" id="portalPayBtn" style="width:100%;justify-content:center">Pay Now →</button>`);
+        document.querySelectorAll('[data-portal-pay]').forEach(b=>b.onclick=()=>{S.paymentMode=b.dataset.portalPay;document.querySelectorAll('[data-portal-pay]').forEach(x=>x.classList.remove('active'));b.classList.add('active');});
+        document.getElementById('portalPayBtn')?.addEventListener('click',()=>{
+          S.portalBillPaid=true; S.paid=true; S.revenue+=500; if(!S.receiptId)S.receiptId=String(Date.now()).slice(-6);
+          const pending=S.invoices.find(i=>i.status==='pending'); if(pending)pending.status='paid';
+          closeModal(); log(`Portal payment ${money(500)}`); App.refresh(true);
+        });
+      }
+    });
+
+    // Login
+    const loginBtn=st.querySelector('#loginBtn');
+    if(loginBtn)loginBtn.onclick=()=>{loginBtn.classList.add('btn-loading');loginBtn.textContent='Signing in';setTimeout(()=>{log('Logged in as Receptionist');this.next();},900);};
+
+    // Dashboard search + rows + quick actions
+    const search=st.querySelector('#apptSearch');
+    if(search){
+      search.oninput=e=>{
+        S.search=e.target.value;
+        const pos=e.target.selectionStart;
+        clearTimeout(this._searchTimer);
+        this._searchTimer=setTimeout(()=>{
+          this.refresh(true);
+          const n=document.getElementById('apptSearch');
+          if(n){n.focus();try{n.setSelectionRange(pos,pos);}catch(_){}}
+        },150);
+      };
+    }
+    st.querySelectorAll('[data-appt]').forEach(row=>row.onclick=()=>{
+      const id=+row.dataset.appt; S.selectedApptId=id;
+      const a=S.appointments.find(x=>x.id===id);
+      openModal(`<h4>${a.patient}</h4><p style="font-size:13px;color:var(--text-muted);line-height:1.8">Doctor: ${a.doctor}<br>Time: ${a.time}<br>Status: ${a.status}</p><button class="btn btn-primary" style="width:100%;margin-top:10px;justify-content:center" data-action="go-book">Book Follow-up</button>`);
+      log(`Opened ${a.patient}`);
+    });
+    st.querySelectorAll('[data-action]').forEach(btn=>btn.onclick=()=>this.runAction(btn.dataset.action));
+
+    st.querySelectorAll('[data-kpi]').forEach(k=>k.onclick=()=>{
+      const l=k.dataset.kpi;
+      if(l.includes('Revenue')||l.includes('Collection')||l.includes('Today'))this.go('rc-payment');
+      else if(l.includes('Waiting')||l.includes('Queue'))this.go('rc-queue');
+      else if(l.includes('Patients'))this.go('rc-dashboard');
+      else if(l.includes('Consult'))this.go('dr-followup');
+      else if(l.includes('Rx'))this.go('dr-prescription');
+    });
+
+    // Save patient
+    const saveP=st.querySelector('#savePatientBtn');
+    if(saveP)saveP.onclick=()=>{
+      const name=st.querySelector('#pName')?.value.trim(), phone=st.querySelector('#pPhone')?.value.replace(/\D/g,'');
+      let ok=true;
+      const errN=st.querySelector('#errName'), errP=st.querySelector('#errPhone');
+      if(!name){errN?.classList.add('show');st.querySelector('#pName')?.classList.add('err');ok=false;}else{errN?.classList.remove('show');st.querySelector('#pName')?.classList.remove('err');}
+      if(!phone||phone.length<10){errP?.classList.add('show');st.querySelector('#pPhone')?.classList.add('err');ok=false;}else{errP?.classList.remove('show');st.querySelector('#pPhone')?.classList.remove('err');}
+      if(!ok)return;
+      S.patient={name,phone,age:st.querySelector('#pAge')?.value||'',gender:st.querySelector('#pGender')?.value||'Male'};
+      S.patients++; S.appointments.push({id:Date.now(),patient:name,doctor:'Dr. Patel',time:'12:00',status:'scheduled'});
+      log(`Patient saved: ${name}`);
+      setTimeout(()=>this.go('rc-book-appt'),600);
+    };
+
+    // Book appointment slots
+    st.querySelectorAll('[data-slot]').forEach(btn=>btn.onclick=()=>{if(btn.classList.contains('full'))return;S.selectedSlot=btn.dataset.slot;this.refresh(true);});
+    const confirmBook=st.querySelector('#confirmBookBtn');
+    if(confirmBook)confirmBook.onclick=()=>{
+      confirmBook.classList.add('btn-loading');
+      setTimeout(()=>{
+        S.booked=true; S.waiting++;
+        const pName=S.patient.name||'Rajesh Kumar';
+        const appt=S.appointments.find(a=>a.patient===pName);
+        if(appt){appt.time=S.selectedSlot;appt.status='waiting';}
+        log(`Booked ${pName} at ${S.selectedSlot}`);
+        this.refresh(true);
+      },700);
+    };
+
+    // Payment
+    st.querySelectorAll('[data-pay]').forEach(btn=>btn.onclick=()=>{S.paymentMode=btn.dataset.pay;this.refresh(true);});
+    const markPaid=st.querySelector('#markPaidBtn');
+    if(markPaid)markPaid.onclick=()=>{
+      markPaid.classList.add('btn-loading');
+      setTimeout(()=>{
+        S.paid=true; S.revenue+=500; if(!S.receiptId)S.receiptId=String(Date.now()).slice(-6);
+        const inv=S.invoices.find(i=>i.status==='pending'); if(inv)inv.status='paid';
+        log(`₹500 received via ${S.paymentMode}`); this.refresh(true);
+      },800);
+    };
+
+    // Queue call next
+    st.querySelectorAll('[data-call]').forEach(btn=>btn.onclick=()=>callNext(+btn.dataset.call));
+    st.querySelectorAll('[data-token]').forEach(card=>card.onclick=e=>{
+      if(e.target.closest('[data-call]'))return;
+      const q=S.queue.find(x=>x.token===+card.dataset.token);
+      if(q)log(`Token #${q.token} — ${q.name}`);
+    });
+    const drCall=st.querySelector('#drCallBtn');
+    if(drCall)drCall.onclick=()=>{const n=S.queue.find(q=>q.status==='next');if(n)callNext(n.token);};
+
+    const self=this;
+    function callNext(token){
+      const q=S.queue.find(x=>x.token===token);
+      if(!q)return;
+      q.status='called'; S.waiting=Math.max(0,S.waiting-1);
+      const nextWait=S.queue.find(x=>x.status==='waiting');
+      if(nextWait)nextWait.status='next';
+      self.updateQueueTimers();
+      self.updateLiveKpis();
+      log(`Called token #${token} — ${q.name}`);
+      self.refresh(true);
+      setTimeout(()=>App.go('dr-consult'),800);
+    }
+
+    // Consult vitals + notes
+    const saveV=st.querySelector('#saveVitalsBtn');
+    if(saveV)saveV.onclick=()=>{
+      S.vitals.bp=+st.querySelector('#vBp')?.value||S.vitals.bp;
+      S.vitals.spo2=+st.querySelector('#vSpo2')?.value||S.vitals.spo2;
+      S.vitals.weight=+st.querySelector('#vWeight')?.value||S.vitals.weight;
+      log(`Vitals: BP ${S.vitals.bp}, SpO2 ${S.vitals.spo2}%`);
+      this.refresh(true);
+    };
+    const saveN=st.querySelector('#saveNotesBtn');
+    if(saveN)saveN.onclick=()=>{S.notes=st.querySelector('#clinicalNotes')?.value||'';log('Notes saved');};
+
+    // Rx
+    st.querySelector('#addRxBtn')?.addEventListener('click',()=>{S.rx.push({id:Date.now(),name:'Metformin 500mg',dose:'1 tab BD',dur:'30 days',qty:60});log('Medicine added');this.refresh(true);});
+    st.querySelectorAll('[data-del-rx]').forEach(btn=>btn.onclick=()=>{S.rx=S.rx.filter(r=>r.id!==+btn.dataset.delRx);log('Medicine removed');this.refresh(true);});
+    st.querySelector('#printRxBtn')?.addEventListener('click',()=>{log('PDF downloaded');window.print();});
+    st.querySelector('#portalRxBtn')?.addEventListener('click',()=>log('Rx sent to portal'));
+
+    // Complete consult
+    st.querySelector('#completeConsultBtn')?.addEventListener('click',()=>{
+      S.consultDone=true; log('Consultation completed');
+      this.refresh(true);
+    });
+
+    st.querySelector('#sendSmsBtn')?.addEventListener('click',()=>{log('WhatsApp sent to 24 patients');smsNotify('WhatsApp · Appointment reminder sent ✓');});
+    patchDetail();
+    if(st.querySelector('#liveClock')||['rc-queue','dr-queue'].includes(this.current))this.startLive();
+    else this.stopLive();
+  },
+  render(){
+    const s=SCREENS[this.current]; if(!s)return;
+    document.getElementById('title').textContent=s.title;
+    document.getElementById('meta').textContent=s.meta;
+    document.getElementById('stage').innerHTML=s.render();
+    document.getElementById('bc').innerHTML=`<span>Demo</span> / <span>${s.role}</span> / <span class="cur">${s.title}</span>`;
+    document.getElementById('feats').innerHTML=s.features.map(f=>`<div class="feature-item"><div class="fdot ${f.n?'new':'mvp'}"></div><div>${f.t}${f.n?' <span class="badge badge-new" style="font-size:8px;padding:2px 5px">NEW</span>':''}</div></div>`).join('');
+    document.getElementById('gap').textContent=s.gap;
+    const b=document.getElementById('badge'); b.textContent=s.status==='new'?'NEW — Build next':'MVP — Live'; b.className='badge '+(s.status==='new'?'badge-new':'badge-mvp');
+    const i=this.flow.indexOf(this.current), pct=i>=0?((i+1)/this.flow.length)*100:0;
+    document.getElementById('progFill').style.width=pct+'%';
+    document.getElementById('progLabel').textContent=s.step?`Step ${s.step} / ${this.flow.length}`:(i>=0?`Step ${i+1} / ${this.flow.length}`:'Pick a flow');
+    document.getElementById('dots').innerHTML=this.flow.map((id,j)=>{let c='sdot';if(id===this.current)c+=' on';else if(j<i)c+=' done';return `<div class="${c}" data-dot-go="${id}"></div>`;}).join('');
+    document.querySelectorAll('[data-dot-go]').forEach(d=>d.onclick=()=>this.go(d.dataset.dotGo));
+    this.syncNav();
+    this.bindScreen();
+    saveDemoState();
+  }
+};
+function runFigmaExport() {
+  document.documentElement.classList.add('figma-export');
+  document.querySelector('.app').style.display = 'none';
+  document.getElementById('toast').style.display = 'none';
+  document.getElementById('modalRoot').style.display = 'none';
+
+  const params = new URLSearchParams(location.search);
+  const singleScreen = params.get('screen');
+
+  const root = document.createElement('div');
+  root.id = 'figmaExportRoot';
+  root.className = 'figma-export-root';
+
+  const order = [...E2E];
+  Object.keys(SCREENS).forEach(id => { if (!order.includes(id)) order.push(id); });
+  const screens = singleScreen
+    ? (SCREENS[singleScreen] ? [singleScreen] : [])
+    : order;
+
+  const screenLinks = order.map(id =>
+    `<a href="?figma=export&screen=${id}" style="color:#2563eb;font-size:12px;margin:2px 6px 2px 0;display:inline-block">${id}</a>`
+  ).join('');
+
+  const banner = document.createElement('div');
+  banner.className = 'figma-export-banner';
+  banner.innerHTML = singleScreen && !screens.length
+    ? `<h1>Unknown screen: ${singleScreen}</h1><p>Valid: ${order.join(', ')}</p>`
+    : `<h1>Doctor CRM — Figma Import${singleScreen ? ` · ${singleScreen}` : ''}</h1>
+    <p><strong>Tip:</strong> Poora page capture bahut bada hota hai → Figma disk error deta hai.<br/>
+    <strong>Ek screen capture karo:</strong> extension → Capture → .h2d → Figma plugin import.</p>
+    ${singleScreen ? `<p><a href="?figma=export" style="color:#2563eb">← All screens list</a></p>` : `<div style="margin-top:12px;line-height:2">${screenLinks}</div>`}
+    <button type="button" class="figma-export-dl" id="figmaDlBtn">⬇ Download this page as .html</button>`;
+  root.appendChild(banner);
+
+  screens.forEach(id => {
+    const s = SCREENS[id];
+    if (!s) return;
+    const frame = document.createElement('div');
+    frame.className = 'figma-export-frame';
+    frame.dataset.screenId = id;
+    frame.innerHTML = `
+      <div class="figma-export-label">${id} · ${s.title} · ${s.role}${s.status === 'new' ? ' · NEW' : ' · MVP'}</div>
+      <div class="figma-export-content">${s.render()}</div>`;
+    root.appendChild(frame);
+  });
+
+  document.body.appendChild(root);
+
+  const dl = document.getElementById('figmaDlBtn');
+  if (dl) dl.onclick = () => {
+    const blob = new Blob(['<!DOCTYPE html>\n' + document.documentElement.outerHTML], { type: 'text/html;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = singleScreen ? `wireframe-${singleScreen}.html` : 'wireframe-figma-static.html';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+}
+
+if (new URLSearchParams(location.search).get('figma') === 'export') {
+  runFigmaExport();
+} else {
+  App.init();
+  window.App = App;
+}
+</script>
+</body>
+</html>
